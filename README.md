@@ -16,13 +16,13 @@ Tasks are stored in a file so they persist even after restarting the application
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
+git clone https://github.com/Sharini55/To-do-List-.git
 ```
 
 2. Navigate into the project folder:
 
 ```bash
-cd repo-name
+cd To-do-List-
 ```
 
 ---
