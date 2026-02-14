@@ -1,3 +1,51 @@
-# To-do-List-
+# To-Do List Application
 
-This is a To List that allows users to add, edit, view, and delete tasks. I used ArrayLists so that the list can grow and shrink, and I used a file to store tasks, so when I restart the app, my tasks are exactly where I left them. 
+A simple console-based To-Do List application built in Java.
+
+This application allows users to:
+
+* Add tasks
+* Edit tasks
+* View all tasks
+* Delete tasks
+
+Tasks are stored in a file so they persist even after restarting the application.
+
+## 📦 Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/your-username/your-repo-name.git
+```
+
+2. Navigate into the project folder:
+
+```bash
+cd repo-name
+```
+
+---
+
+## ▶️ How to Run
+
+### Option 1: Using Command Line
+
+Compile the program:
+
+```bash
+javac To.java
+```
+
+Run the program:
+
+```bash
+java To
+```
+---
+
+
+
+## 📜 License
+
+This project is open source and available under the MIT License.
