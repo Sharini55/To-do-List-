@@ -24,6 +24,9 @@ git clone https://github.com/Sharini55/To-do-List-.git
 ```bash
 cd To-do-List-
 ```
+```bash
+cd src
+```
 
 ---
 
@@ -45,7 +48,3 @@ java To
 ---
 
 
-
-## 📜 License
-
-This project is open source and available under the MIT License.
