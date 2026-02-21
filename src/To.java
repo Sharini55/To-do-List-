@@ -1,9 +1,10 @@
+import java.io.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Collections; // Needed for sorting
+import java.util.Collections;
 import java.util.Scanner;
-import java.io.*;
 
 public class To {
     public static void main(String[] args) {
@@ -11,17 +12,15 @@ public class To {
         ArrayList<Task> taskList = loadTasks();
         System.out.println("Loaded " + taskList.size() + " tasks from file."); 
         
-        // --- NEW: STARTUP REMINDERS ---
         System.out.println("\n--- ALERTS ---");
         boolean hasAlerts = false;
         for (Task t : taskList) {
             if (!t.isCompleted() && (t.getDueDate().isBefore(LocalDate.now()) || t.getDueDate().isEqual(LocalDate.now()))) {
-                System.out.println(t); // Prints the overdue/due today tasks
+                System.out.println(t); 
                 hasAlerts = true;
             }
         }
         if (!hasAlerts) System.out.println("You are all caught up! No tasks overdue.");
-        // ------------------------------
 
         Scanner scan = new Scanner(System.in);
         int choice;
@@ -33,11 +32,10 @@ public class To {
             System.out.println("2. Delete Task");
             System.out.println("3. Edit Task");
             System.out.println("4. View Tasks");
-            System.out.println("5. Sort Tasks by Date"); // NEW OPTION
+            System.out.println("5. Sort Tasks by Date"); 
             System.out.println("6. Exit");
             System.out.print("Select an option: ");
 
-            // FIXED: Bulletproof menu selection
             choice = getValidInt(scan);
 
             switch (choice) {
@@ -48,7 +46,6 @@ public class To {
                     System.out.print("Enter Description: ");
                     String desc = scan.nextLine();
 
-                    // FIXED: Bulletproof date entry
                     System.out.print("Enter Due Date (YYYY-MM-DD): ");
                     LocalDate date = getValidDate(scan); 
 
@@ -67,7 +64,6 @@ public class To {
                         }
 
                         System.out.print("Enter the number of the task to delete: ");
-                        // FIXED: Bulletproof number entry
                         int deleteId = getValidInt(scan); 
                         int index = deleteId - 1;
 
@@ -90,7 +86,6 @@ public class To {
                         }
 
                         System.out.print("Enter the number of the task to edit: ");
-                        // FIXED: Bulletproof number entry
                         int editId = getValidInt(scan);
                         int index = editId - 1;
 
@@ -103,7 +98,6 @@ public class To {
                             System.out.println("3. Change Date");
                             System.out.print("Select option: ");
 
-                            // FIXED: Bulletproof number entry
                             int editOption = getValidInt(scan);
 
                             switch (editOption) {
@@ -119,7 +113,6 @@ public class To {
                                     break;
                                 case 3:
                                     System.out.print("Enter new date (YYYY-MM-DD): ");
-                                    // FIXED: Bulletproof date entry
                                     LocalDate newDate = getValidDate(scan);
                                     taskToEdit.setDueDate(newDate);
                                     System.out.println("Date updated!");
@@ -144,7 +137,6 @@ public class To {
                     }
                     break;
 
-                // NEW: SORTING LOGIC
                 case 5:
                     System.out.println("Sorting tasks by Due Date...");
                     Collections.sort(taskList);
@@ -189,7 +181,7 @@ public class To {
                 try {
                     String[] parts = line.split("\\|");
 
-                    if (parts.length == 4) {
+                    if (parts.length >= 4) { // Needs at least 4 parts
                         String title = parts[0];
                         String desc = parts[1];
                         LocalDate date = LocalDate.parse(parts[2]); 
@@ -197,10 +189,15 @@ public class To {
 
                         Task t = new Task(title, desc, date);
                         t.setCompleted(isDone); 
+                        
+                        // If the file has a 5th part (the reminder), load it!
+                        if (parts.length == 5 && !parts[4].equals("null")) {
+                            t.setReminder(LocalDateTime.parse(parts[4]));
+                        }
+                        
                         loadedTasks.add(t);
                     }
                 } catch (Exception e) {
-                    // FIXED: If someone manually messed up the text file, skip the broken line instead of crashing
                     System.out.println("Skipping corrupted task data.");
                 }
             }
@@ -210,42 +207,33 @@ public class To {
         return loadedTasks;
     }
 
-    // --- BULLETPROOF HELPER METHODS ---
-
-    // 1. Prevents crash if user types letters instead of numbers
     public static int getValidInt(Scanner scan) {
         while (true) {
             if (scan.hasNextInt()) {
                 int num = scan.nextInt();
-                scan.nextLine(); // Clear the enter key
+                scan.nextLine(); 
                 return num;
             } else {
                 System.out.println("Invalid input. Please enter a number.");
-                scan.nextLine(); // Clear the bad typing
+                scan.nextLine(); 
                 System.out.print("Try again: ");
             }
         }
     }
 
-    // 2. Prevents crash if user types a bad date
     public static LocalDate getValidDate(Scanner scan) {
-    while (true) {
-        String input = scan.nextLine();
-        try {
-            LocalDate enteredDate = LocalDate.parse(input);
-            
-            // --- NEW: Time Travel Check ---
-            if (enteredDate.isBefore(LocalDate.now())) {
-                System.out.print("You can't schedule a task in the past! Enter a future date: ");
-                continue; // This skips the rest of the code and restarts the loop
+        while (true) {
+            String input = scan.nextLine();
+            try {
+                LocalDate enteredDate = LocalDate.parse(input);
+                if (enteredDate.isBefore(LocalDate.now())) {
+                    System.out.print("You can't schedule a task in the past! Enter a future date: ");
+                    continue; 
+                }
+                return enteredDate;
+            } catch (DateTimeParseException e) {
+                System.out.print("Invalid format! Please use YYYY-MM-DD (e.g., 2026-10-31): ");
             }
-            // ------------------------------
-
-            return enteredDate; // If it's a good date, return it!
-            
-        } catch (DateTimeParseException e) {
-            System.out.print("Invalid format! Please use YYYY-MM-DD (e.g., 2026-10-31): ");
         }
     }
-}
 }

@@ -1,18 +1,20 @@
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-// 1. ADDED: "implements Comparable<Task>" so Java knows how to sort it
 public class Task implements Comparable<Task> {
     
     private String title;
     private String description;
     private boolean isCompleted;
     private LocalDate dueDate;
+    private LocalDateTime reminder; // NEW: Stores Date AND Time
 
     public Task(String title, String description, LocalDate dueDate) {
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
         this.isCompleted = false; 
+        this.reminder = null; // Reminders are empty by default
     }
 
     public String getTitle() { return title; }
@@ -27,30 +29,21 @@ public class Task implements Comparable<Task> {
     public LocalDate getDueDate() { return dueDate; }
     public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
 
-    // 2. ADDED: Logic to check if overdue or due today
+    public LocalDateTime getReminder() { return reminder; }
+    public void setReminder(LocalDateTime reminder) { this.reminder = reminder; }
+
     @Override
     public String toString() {
         String checkbox = isCompleted ? "[X]" : "[ ]";
-        String statusAlert = "";
-
-        // Only show alerts if the task is NOT completed
-        if (!isCompleted) {
-            LocalDate today = LocalDate.now();
-            if (dueDate.isBefore(today)) {
-                statusAlert = " ⚠️ OVERDUE!";
-            } else if (dueDate.isEqual(today)) {
-                statusAlert = " ⏰ DUE TODAY!";
-            }
-        }
-
-        return checkbox + " " + title + " (Due: " + dueDate + ")" + statusAlert;
+        String remText = (reminder != null) ? " ⏰ Reminder: " + reminder : "";
+        return checkbox + " " + title + " (Due: " + dueDate + ")" + remText;
     }
 
     public String toFileFormat() {
-        return title + "|" + description + "|" + dueDate + "|" + isCompleted;
+        // NEW: Appends the reminder to the end of the line. If null, saves as "null"
+        return title + "|" + description + "|" + dueDate + "|" + isCompleted + "|" + (reminder != null ? reminder.toString() : "null");
     }
 
-    // 3. ADDED: This method tells Java how to sort Tasks (by Due Date)
     @Override
     public int compareTo(Task other) {
         return this.dueDate.compareTo(other.getDueDate());

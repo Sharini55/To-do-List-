@@ -1,3 +1,6 @@
-Emails|Send emails to professors about research and assistantships|2026-02-13|false
-Finish and return the book|return the book before due date|2026-02-18|false
-LA Exam|Practice, Practice, Practice|2026-02-18|false
+hi||2024-05-13|true|null
+Emails|Send emails to professors about research and assistantships|2026-02-13|true|null
+Finish and return the book|return the book before due date|2026-02-18|true|null
+LA Exam|Practice, Practice, Practice|2026-02-18|true|null
+hello||2026-02-21|true|null
+Hello||2026-02-22|true|null
