@@ -1,4 +1,4 @@
-To-Do List Application
+# To-Do List Application
 
 A modern, interactive Graphical User Interface (GUI) To-Do List application built in Java Swing, with a fully functional classic console-based alternative. 
 
