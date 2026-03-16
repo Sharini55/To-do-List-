@@ -14,12 +14,6 @@ This application allows users to visually manage their daily tasks, set precise 
 * **Persistent Storage:** Automatically saves all task data, completion status, and timeframes to a local `tasks.txt` file.
 
 
-This project has two different `main` classes. 
-
-* **`ToDoGUI.java` (Graphical Mode):** The primary, modern way to use the app. It launches the visual window with clickable menus, the custom calendar, and checkboxes. 
-* **`To.java` (Console Mode):** The original, lightweight, text-based terminal version. It runs entirely in the command line using numbered menus. Great for quick edits, developers, or running on systems without a graphical interface.
-
-*Note: Both versions read and save to the same `tasks.txt` file. A task added in the GUI will perfectly sync and appear in the console version, and vice versa!*
 
 ## Installation
 
