@@ -8,7 +8,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 <groupId>com.todo</groupId>
 <artifactId>todo-list-app</artifactId>
 <version>1.0-SNAPSHOT</version>
-<packaging>war</packaging>
+<packaging>jar</packaging>
 
 <properties>
     <maven.compiler.source>17</maven.compiler.source>
