@@ -22,16 +22,15 @@ jobs:
           distribution: 'microsoft'
 
       - name: Build with Maven
-        # The **/ tells Maven to search all folders for the pom.xml
-        run: mvn clean install -f To-do-List-/pom.xml
-        
+        # Since pom.xml is in the root, we just run the standard command
+        run: mvn clean install
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: java-app
-          # This finds the finished app wherever it was built
-          path: 'To-do-List-/target/*.jar'
+          # This tells GitHub to look in the local 'target' folder created by the build
+          path: 'target/*.jar'
 
   deploy:
     runs-on: ubuntu-latest
