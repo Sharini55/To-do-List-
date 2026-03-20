@@ -23,14 +23,15 @@ jobs:
 
       - name: Build with Maven
         # The **/ tells Maven to search all folders for the pom.xml
-        run: mvn clean install -f **/pom.xml
+        run: mvn clean install -f To-do-List-/pom.xml
+        
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: java-app
           # This finds the finished app wherever it was built
-          path: '**/target/*.jar'
+          path: 'To-do-List-/target/*.jar'
 
   deploy:
     runs-on: ubuntu-latest
