@@ -13,6 +13,7 @@ public class MainGUI {
     private CardLayout cardLayout;
 
     public static void main(String[] args) {
+        WebApp.start();
         SwingUtilities.invokeLater(() -> new MainGUI().createAndShowGUI());
     }
 
