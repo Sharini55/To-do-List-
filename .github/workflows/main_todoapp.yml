@@ -47,8 +47,10 @@ jobs:
             --resource-group Todoapp_group \
             --src-path target/todo-app.jar \
             --type jar \
-            --async false
+            --async true
  
       - name: Start App Service
-        run: az webapp start --name Todoapp --resource-group Todoapp_group
+        run: |
+          sleep 15
+          az webapp start --name Todoapp --resource-group Todoapp_group
  
