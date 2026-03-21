@@ -24,8 +24,12 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
  
-      - name: List target directory (debug)
-        run: ls -la target/
+      - name: Verify JAR was created
+        run: |
+          echo "=== Files in target/ ==="
+          ls -la target/
+          echo "=== Checking todo-app.jar exists ==="
+          test -f target/todo-app.jar && echo "SUCCESS: todo-app.jar found" || echo "FAILED: todo-app.jar NOT found"
  
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -47,8 +51,11 @@ jobs:
           name: java-app
           path: .
  
-      - name: List files (debug)
-        run: ls -la
+      - name: Verify downloaded JAR
+        run: |
+          echo "=== Downloaded files ==="
+          ls -la
+          test -f todo-app.jar && echo "SUCCESS: todo-app.jar ready to deploy" || echo "FAILED: todo-app.jar missing"
  
       - name: Login to Azure
         uses: azure/login@v2
@@ -62,5 +69,5 @@ jobs:
         with:
           app-name: 'Todoapp'
           slot-name: 'Production'
-          package: './todo-app.jar'
+          package: 'todo-app.jar'
  
