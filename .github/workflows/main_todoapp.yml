@@ -25,11 +25,6 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
  
-      - name: Confirm JAR exists
-        run: |
-          ls -lh target/
-          test -f target/todo-app.jar && echo "JAR FOUND" || (echo "JAR MISSING" && exit 1)
- 
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -37,20 +32,13 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_238F392DF2A74BAF9C37522BD1B0243D }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A0E56221979B41F5844D2B8560461031 }}
  
-      - name: Stop App Service
-        run: az webapp stop --name Todoapp --resource-group Todoapp_group
- 
-      - name: Deploy JAR via Azure CLI
+      - name: Deploy JAR to Azure
         run: |
           az webapp deploy \
             --name Todoapp \
             --resource-group Todoapp_group \
             --src-path target/todo-app.jar \
             --type jar \
-            --async true
- 
-      - name: Start App Service
-        run: |
-          sleep 15
-          az webapp start --name Todoapp --resource-group Todoapp_group
+            --async true \
+            --timeout 30
  
