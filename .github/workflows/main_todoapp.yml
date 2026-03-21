@@ -22,15 +22,13 @@ jobs:
           distribution: 'microsoft'
 
       - name: Build with Maven
-        # Since pom.xml is in the root, we just run the standard command
-        run: mvn clean install
+        run: mvn clean package
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: java-app
-          # This tells GitHub to look in the local 'target' folder created by the build
-          path: 'target/*.jar'
+          path: target/*.jar
 
   deploy:
     runs-on: ubuntu-latest
@@ -38,13 +36,14 @@ jobs:
     permissions:
       id-token: write
       contents: read
-  
+
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: java-app
-      
+          path: .
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -57,4 +56,4 @@ jobs:
         with:
           app-name: 'Todoapp'
           slot-name: 'Production'
-          package: 'target/todo-app.jar'
+          package: './todo-app.jar'
