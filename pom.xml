@@ -24,7 +24,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>MainGUI</mainClass>
+                            <mainClass>com.todo.MainGUI</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
