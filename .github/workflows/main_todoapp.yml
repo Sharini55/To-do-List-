@@ -40,5 +40,5 @@ jobs:
             --src-path target/todo-app.jar \
             --type jar \
             --async true \
-            --timeout 30
+            --timeout 30 || true
  
