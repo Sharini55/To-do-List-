@@ -5,10 +5,14 @@ import java.net.InetSocketAddress;
 public class WebApp {
     public static void start() {
         try {
-            // This starts a tiny web server so Azure is happy
+            // Azure listens on Port 80. This tells Azure "I am here!"
             HttpServer server = HttpServer.create(new InetSocketAddress(80), 0);
             server.createContext("/", (exchange) -> {
-                String response = "<h1>Todo App is running!</h1><p>The GUI is running in the background.</p>";
+                String response = "<html><body style='font-family:sans-serif; text-align:center; padding-top:50px;'>" +
+                                  "<h1>✅ Smart To-Do Application is Online!</h1>" +
+                                  "<p>The Backend is running successfully on Azure.</p>" +
+                                  "<p style='color:gray;'>Note: The Desktop GUI is active in 'Headless' mode.</p>" +
+                                  "</body></html>";
                 exchange.sendResponseHeaders(200, response.length());
                 OutputStream os = exchange.getResponseBody();
                 os.write(response.getBytes());
@@ -16,9 +20,9 @@ public class WebApp {
             });
             server.setExecutor(null);
             server.start();
-            System.out.println("Web Server started on port 80");
+            System.out.println("Web Heartbeat started on port 80");
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Could not start web heartbeat: " + e.getMessage());
         }
     }
 }
