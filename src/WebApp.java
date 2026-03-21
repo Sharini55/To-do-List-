@@ -6,7 +6,8 @@ public class WebApp {
     public static void start() {
         try {
             // Azure listens on Port 80. This tells Azure "I am here!"
-            HttpServer server = HttpServer.create(new InetSocketAddress(80), 0);
+            // Change this line in WebApp.java
+            HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
             server.createContext("/", (exchange) -> {
                 String response = "<html><body style='font-family:sans-serif; text-align:center; padding-top:50px;'>" +
                                   "<h1>✅ Smart To-Do Application is Online!</h1>" +
