@@ -9,7 +9,6 @@
     <version>1.0</version>
     <packaging>jar</packaging>
 
-    <!-- Spring Boot Parent handles all dependency versions for you -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -24,21 +23,33 @@
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Web: gives you a server + REST API -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-        <!-- This is what your GitHub Action and Azure expect -->
         <finalName>todo-app</finalName>
         <plugins>
-            <!-- This plugin creates the runnable "fat JAR" with everything included -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Show test names in CI logs -->
+                    <printSummary>true</printSummary>
+                </configuration>
             </plugin>
         </plugins>
     </build>
