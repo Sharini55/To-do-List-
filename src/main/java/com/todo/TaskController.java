@@ -3,19 +3,15 @@ package com.todo;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.boot.web.servlet.error.ErrorController;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
 @RestController
-public class TaskController implements ErrorController {
+public class TaskController {
 
     private List<Task> tasks = new ArrayList<>();
-
-    // ── Task API ──
 
     @GetMapping("/api/tasks")
     public ResponseEntity<List<Task>> getAllTasks() {
@@ -70,17 +66,5 @@ public class TaskController implements ErrorController {
     @GetMapping("/api/health")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of("status", "UP", "tasks", String.valueOf(tasks.size())));
-    }
-
-    // ── Handle all 404/error routes — serve the SPA instead ──
-    @RequestMapping("/error")
-    public ResponseEntity<Map<String, Object>> handleError(HttpServletRequest request) {
-        Integer statusCode = (Integer) request.getAttribute("javax.servlet.error.status_code");
-        String message = (String) request.getAttribute("javax.servlet.error.message");
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", statusCode != null ? statusCode : 500);
-        body.put("message", message != null ? message : "An unexpected error occurred");
-        body.put("path", request.getAttribute("javax.servlet.error.request_uri"));
-        return ResponseEntity.status(statusCode != null ? statusCode : 500).body(body);
     }
 }
