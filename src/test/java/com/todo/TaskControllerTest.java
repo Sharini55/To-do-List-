@@ -21,38 +21,27 @@ class TaskControllerTest {
 
     @Autowired MockMvc mvc;
 
-    // ════════════════════════════════════════
-    //  HEALTH & BASIC CONNECTIVITY
-    // ════════════════════════════════════════
-
-    @Test
-    @DisplayName("Health endpoint returns UP")
+    // ── HEALTH ──
+    @Test @DisplayName("Health endpoint returns UP")
     void healthCheck() throws Exception {
         mvc.perform(get("/api/health"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("UP"));
     }
 
-    @Test
-    @DisplayName("GET /api/tasks returns empty list on startup")
+    @Test @DisplayName("GET /api/tasks returns empty list on startup")
     void getTasksEmpty() throws Exception {
         mvc.perform(get("/api/tasks"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
     }
 
-    // ════════════════════════════════════════
-    //  TASK CREATION
-    // ════════════════════════════════════════
-
-    @Test
-    @DisplayName("Create a valid task returns 201")
+    // ── CREATE ──
+    @Test @DisplayName("Create a valid task returns 201")
     void createTask_valid() throws Exception {
         mvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    {"title":"Study for exam","priority":"Red","dueDate":"2027-01-01"}
-                    """))
+                .content("{\"title\":\"Study for exam\",\"priority\":\"Red\",\"dueDate\":\"2027-01-01\"}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").exists())
             .andExpect(jsonPath("$.title").value("Study for exam"))
@@ -60,229 +49,190 @@ class TaskControllerTest {
             .andExpect(jsonPath("$.completed").value(false));
     }
 
-    @Test
-    @DisplayName("Create task with no priority defaults to None")
+    @Test @DisplayName("Create task with no priority defaults to None")
     void createTask_defaultPriority() throws Exception {
         mvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Buy groceries"}"""))
+                .content("{\"title\":\"Buy groceries\"}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.priority").value("None"));
     }
 
-    @Test
-    @DisplayName("Create task with empty title returns 400")
+    @Test @DisplayName("Create task with empty title returns 400")
     void createTask_emptyTitle() throws Exception {
         mvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"","priority":"None"}"""))
+                .content("{\"title\":\"\",\"priority\":\"None\"}"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error").exists());
     }
 
-    @Test
-    @DisplayName("Create task with null title returns 400")
+    @Test @DisplayName("Create task with null title returns 400")
     void createTask_nullTitle() throws Exception {
         mvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"priority":"None"}"""))
+                .content("{\"priority\":\"None\"}"))
             .andExpect(status().isBadRequest());
     }
 
-    @Test
-    @DisplayName("Create task with whitespace-only title returns 400")
+    @Test @DisplayName("Create task with whitespace-only title returns 400")
     void createTask_whitespaceTitle() throws Exception {
         mvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"   "}"""))
+                .content("{\"title\":\"   \"}"))
             .andExpect(status().isBadRequest());
     }
 
-    @Test
-    @DisplayName("Multiple tasks get unique IDs")
+    @Test @DisplayName("Multiple tasks get unique IDs")
     void createMultipleTasks_uniqueIds() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Task 1"}""")).andExpect(status().isCreated());
+                .content("{\"title\":\"Task 1\"}")).andExpect(status().isCreated());
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Task 2"}""")).andExpect(status().isCreated());
+                .content("{\"title\":\"Task 2\"}")).andExpect(status().isCreated());
         mvc.perform(get("/api/tasks"))
-            .andExpect(jsonPath("$[0].id").value(not(jsonPath("$[1].id"))));
+            .andExpect(jsonPath("$[0].id").value(not(equalTo(jsonPath("$[1].id")))));
     }
 
-    // ════════════════════════════════════════
-    //  TASK RETRIEVAL & PERSISTENCE
-    // ════════════════════════════════════════
-
-    @Test
-    @DisplayName("Created tasks are stored and retrievable")
+    // ── PERSISTENCE ──
+    @Test @DisplayName("Created tasks are stored and retrievable")
     void tasksArePersisted() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Persistent task","priority":"Green"}"""));
+                .content("{\"title\":\"Persistent task\",\"priority\":\"Green\"}"));
         mvc.perform(get("/api/tasks"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(1)))
             .andExpect(jsonPath("$[0].title").value("Persistent task"));
     }
 
-    @Test
-    @DisplayName("All tasks are returned after multiple creates")
+    @Test @DisplayName("All tasks returned after multiple creates")
     void allTasksReturned() throws Exception {
         for (int i = 1; i <= 5; i++) {
             mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                    .content(String.format("""{"title":"Task %d"}""", i)));
+                    .content("{\"title\":\"Task " + i + "\"}"));
         }
         mvc.perform(get("/api/tasks"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(5)));
     }
 
-    // ════════════════════════════════════════
-    //  TASK COMPLETION TOGGLE
-    // ════════════════════════════════════════
-
-    @Test
-    @DisplayName("Toggle complete marks task as done")
+    // ── TOGGLE COMPLETE ──
+    @Test @DisplayName("Toggle complete marks task as done")
     void toggleComplete_marksDone() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Finish report"}"""));
+                .content("{\"title\":\"Finish report\"}"));
         mvc.perform(patch("/api/tasks/1/complete"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.completed").value(true));
     }
 
-    @Test
-    @DisplayName("Toggle complete twice returns to incomplete")
+    @Test @DisplayName("Toggle complete twice returns to incomplete")
     void toggleComplete_twice() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Test task"}"""));
+                .content("{\"title\":\"Test task\"}"));
         mvc.perform(patch("/api/tasks/1/complete"));
         mvc.perform(patch("/api/tasks/1/complete"))
             .andExpect(jsonPath("$.completed").value(false));
     }
 
-    @Test
-    @DisplayName("Toggle non-existent task returns 404")
+    @Test @DisplayName("Toggle non-existent task returns 404")
     void toggleComplete_notFound() throws Exception {
         mvc.perform(patch("/api/tasks/999/complete"))
             .andExpect(status().isNotFound());
     }
 
-    // ════════════════════════════════════════
-    //  TASK UPDATE
-    // ════════════════════════════════════════
-
-    @Test
-    @DisplayName("Update task title works correctly")
+    // ── UPDATE ──
+    @Test @DisplayName("Update task title works correctly")
     void updateTask_title() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Old title"}"""));
+                .content("{\"title\":\"Old title\"}"));
         mvc.perform(put("/api/tasks/1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"New title"}"""))
+                .content("{\"title\":\"New title\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.title").value("New title"));
     }
 
-    @Test
-    @DisplayName("Update task priority works correctly")
+    @Test @DisplayName("Update task priority works correctly")
     void updateTask_priority() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Task","priority":"None"}"""));
+                .content("{\"title\":\"Task\",\"priority\":\"None\"}"));
         mvc.perform(put("/api/tasks/1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"priority":"Red"}"""))
+                .content("{\"priority\":\"Red\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.priority").value("Red"));
     }
 
-    @Test
-    @DisplayName("Update non-existent task returns 404")
+    @Test @DisplayName("Update non-existent task returns 404")
     void updateTask_notFound() throws Exception {
         mvc.perform(put("/api/tasks/999")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Ghost task"}"""))
+                .content("{\"title\":\"Ghost task\"}"))
             .andExpect(status().isNotFound());
     }
 
-    // ════════════════════════════════════════
-    //  TASK DELETION
-    // ════════════════════════════════════════
-
-    @Test
-    @DisplayName("Delete existing task returns 204")
+    // ── DELETE ──
+    @Test @DisplayName("Delete existing task returns 204")
     void deleteTask_exists() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"To delete"}"""));
+                .content("{\"title\":\"To delete\"}"));
         mvc.perform(delete("/api/tasks/1"))
             .andExpect(status().isNoContent());
         mvc.perform(get("/api/tasks"))
             .andExpect(jsonPath("$", hasSize(0)));
     }
 
-    @Test
-    @DisplayName("Delete non-existent task returns 404")
+    @Test @DisplayName("Delete non-existent task returns 404")
     void deleteTask_notFound() throws Exception {
         mvc.perform(delete("/api/tasks/999"))
             .andExpect(status().isNotFound());
     }
 
-    @Test
-    @DisplayName("Delete one task does not affect others")
+    @Test @DisplayName("Delete one task does not affect others")
     void deleteTask_otherTasksUnaffected() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Keep me"}"""));
+                .content("{\"title\":\"Keep me\"}"));
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Delete me"}"""));
+                .content("{\"title\":\"Delete me\"}"));
         mvc.perform(delete("/api/tasks/2"));
         mvc.perform(get("/api/tasks"))
             .andExpect(jsonPath("$", hasSize(1)))
             .andExpect(jsonPath("$[0].title").value("Keep me"));
     }
 
-    // ════════════════════════════════════════
-    //  CROSS-ENDPOINT SYNC (tasks visible across all views)
-    // ════════════════════════════════════════
-
-    @Test
-    @DisplayName("Task created via POST is visible in GET — cross-view sync")
+    // ── CROSS-VIEW SYNC ──
+    @Test @DisplayName("Task created via POST is visible in GET — cross-view sync")
     void crossViewSync_createThenGet() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Synced task","priority":"Yellow","dueDate":"2027-06-15"}"""));
-        // Simulate what each view does: they all call GET /api/tasks
+                .content("{\"title\":\"Synced task\",\"priority\":\"Yellow\",\"dueDate\":\"2027-06-15\"}"));
         mvc.perform(get("/api/tasks"))
             .andExpect(jsonPath("$[0].title").value("Synced task"))
             .andExpect(jsonPath("$[0].dueDate").value("2027-06-15"));
     }
 
-    @Test
-    @DisplayName("Task updated is reflected in subsequent GET — sync after edit")
+    @Test @DisplayName("Task updated is reflected in subsequent GET — sync after edit")
     void crossViewSync_updateThenGet() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Original"}"""));
+                .content("{\"title\":\"Original\"}"));
         mvc.perform(put("/api/tasks/1").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Updated","priority":"Red"}"""));
+                .content("{\"title\":\"Updated\",\"priority\":\"Red\"}"));
         mvc.perform(get("/api/tasks"))
             .andExpect(jsonPath("$[0].title").value("Updated"))
             .andExpect(jsonPath("$[0].priority").value("Red"));
     }
 
-    @Test
-    @DisplayName("Completed task still appears in GET list")
+    @Test @DisplayName("Completed task still appears in GET list")
     void completedTask_stillInList() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Done task"}"""));
+                .content("{\"title\":\"Done task\"}"));
         mvc.perform(patch("/api/tasks/1/complete"));
         mvc.perform(get("/api/tasks"))
             .andExpect(jsonPath("$", hasSize(1)))
             .andExpect(jsonPath("$[0].completed").value(true));
     }
 
-    // ════════════════════════════════════════
-    //  EDGE CASES & MALFORMED INPUT
-    // ════════════════════════════════════════
-
-    @Test
-    @DisplayName("Malformed JSON returns 400")
+    // ── EDGE CASES ──
+    @Test @DisplayName("Malformed JSON returns 400")
     void malformedJson() throws Exception {
         mvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -290,20 +240,18 @@ class TaskControllerTest {
             .andExpect(status().isBadRequest());
     }
 
-    @Test
-    @DisplayName("Task with very long title is accepted")
+    @Test @DisplayName("Task with very long title is accepted")
     void longTitle() throws Exception {
         String longTitle = "A".repeat(500);
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content(String.format("""{"title":"%s"}""", longTitle)))
+                .content("{\"title\":\"" + longTitle + "\"}"))
             .andExpect(status().isCreated());
     }
 
-    @Test
-    @DisplayName("Task with special characters in title is accepted")
+    @Test @DisplayName("Task with special characters in title is accepted")
     void specialCharacters() throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Buy <milk> & \"eggs\" @ store"}"""))
+                .content("{\"title\":\"Buy milk & eggs\"}"))
             .andExpect(status().isCreated());
     }
 
@@ -312,13 +260,12 @@ class TaskControllerTest {
     @DisplayName("All valid priorities are accepted")
     void validPriorities(String priority) throws Exception {
         mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                .content(String.format("""{"title":"Task","priority":"%s"}""", priority)))
+                .content("{\"title\":\"Task\",\"priority\":\"" + priority + "\"}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.priority").value(priority));
     }
 
-    @Test
-    @DisplayName("Wrong Content-Type returns 415")
+    @Test @DisplayName("Wrong Content-Type returns 415")
     void wrongContentType() throws Exception {
         mvc.perform(post("/api/tasks")
                 .contentType(MediaType.TEXT_PLAIN)
@@ -326,36 +273,27 @@ class TaskControllerTest {
             .andExpect(status().isUnsupportedMediaType());
     }
 
-    // ════════════════════════════════════════
-    //  HTTP METHOD ERRORS
-    // ════════════════════════════════════════
-
-    @Test
-    @DisplayName("PUT to /api/tasks (no ID) returns 405 Method Not Allowed")
+    // ── HTTP METHOD ERRORS ──
+    @Test @DisplayName("PUT to /api/tasks (no ID) returns 405")
     void wrongMethod_putWithoutId() throws Exception {
         mvc.perform(put("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"title":"Test"}"""))
+                .content("{\"title\":\"Test\"}"))
             .andExpect(status().isMethodNotAllowed());
     }
 
-    @Test
-    @DisplayName("DELETE to /api/tasks (no ID) returns 405 Method Not Allowed")
+    @Test @DisplayName("DELETE to /api/tasks (no ID) returns 405")
     void wrongMethod_deleteWithoutId() throws Exception {
         mvc.perform(delete("/api/tasks"))
             .andExpect(status().isMethodNotAllowed());
     }
 
-    // ════════════════════════════════════════
-    //  CONCURRENT / STRESS
-    // ════════════════════════════════════════
-
-    @Test
-    @DisplayName("Creating 100 tasks all succeed and are stored")
+    // ── STRESS ──
+    @Test @DisplayName("Creating 100 tasks all succeed and are stored")
     void stressTest_100tasks() throws Exception {
         for (int i = 1; i <= 100; i++) {
             mvc.perform(post("/api/tasks").contentType(MediaType.APPLICATION_JSON)
-                    .content(String.format("""{"title":"Task %d"}""", i)))
+                    .content("{\"title\":\"Task " + i + "\"}"))
                 .andExpect(status().isCreated());
         }
         mvc.perform(get("/api/tasks"))
