@@ -2,6 +2,7 @@ package com.todo;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import java.util.List;
@@ -14,7 +15,15 @@ public class GeminiController {
     @Value("${gemini.api.key:}")
     private String apiKey;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+
+    public GeminiController() {
+        // 5s connect timeout, 45s read timeout for slow free-tier models
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(45000);
+        this.restTemplate = new RestTemplate(factory);
+    }
 
     @PostMapping("/chat")
     public ResponseEntity<?> chat(@RequestBody Map<String, Object> body) {
@@ -44,7 +53,7 @@ public class GeminiController {
         String url = "https://openrouter.ai/api/v1/chat/completions";
 
         Map<String, Object> requestBody = Map.of(
-            "model", "mistralai/mistral-7b-instruct:free",
+            "model", "mistralai/mistral-small-3.1-24b-instruct:free",
             "messages", List.of(
                 Map.of("role", "system", "content", systemPrompt),
                 Map.of("role", "user", "content", userMessage)
