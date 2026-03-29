@@ -18,7 +18,6 @@ public class GeminiController {
     private final RestTemplate restTemplate;
 
     public GeminiController() {
-        // 5s connect timeout, 45s read timeout for slow free-tier models
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5000);
         factory.setReadTimeout(45000);
@@ -50,10 +49,12 @@ public class GeminiController {
             + "Priority: high=Red, medium=Yellow, low=Green, default=None.\n"
             + "Context: " + context;
 
+        // openrouter/free automatically picks from all currently available free models
+        // This means it never breaks when a specific model gets removed
         String url = "https://openrouter.ai/api/v1/chat/completions";
 
         Map<String, Object> requestBody = Map.of(
-            "model", "mistralai/mistral-small-3.1-24b-instruct:free",
+            "model", "openrouter/free",
             "messages", List.of(
                 Map.of("role", "system", "content", systemPrompt),
                 Map.of("role", "user", "content", userMessage)
