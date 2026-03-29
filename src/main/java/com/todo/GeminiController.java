@@ -28,29 +28,49 @@ public class GeminiController {
     public ResponseEntity<?> chat(@RequestBody Map<String, Object> body) {
         if (apiKey == null || apiKey.isBlank()) {
             return ResponseEntity.status(503)
-                .body(Map.of("error", "AI API key not configured. Add GEMINI_API_KEY to your Azure app settings."));
+                .body(Map.of("error", "AI API key not configured."));
         }
 
         String userMessage = (String) body.get("message");
-        String context = (String) body.getOrDefault("context", "");
+        if (userMessage == null || userMessage.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No message provided."));
+        }
 
+        String context = (String) body.getOrDefault("context", "");
         String today = java.time.LocalDate.now().toString();
         String tomorrow = java.time.LocalDate.now().plusDays(1).toString();
 
-        String systemPrompt = "You are a productivity assistant. Today=" + today + ", Tomorrow=" + tomorrow + ".\n"
-            + "Reply ONLY with valid JSON (no markdown, no backticks):\n"
-            + "{\"action\":\"<action>\",\"params\":{...},\"reply\":\"<message>\"}\n"
-            + "Actions: add_task(title,dueDate,priority[Red/Yellow/Green/None],description), "
-            + "add_event(title,date,startTime,endTime,location,color,repeat[none/daily/weekly/biweekly/monthly]), "
-            + "add_reminder(title,datetime), add_habit(name,icon,duration), "
-            + "delete_task(title), delete_event(title), "
-            + "reschedule_task(title,newDate), reschedule_event(title,newDate,newStartTime), "
-            + "complete_task(title), query_schedule(date), show_report, none.\n"
-            + "Priority: high=Red, medium=Yellow, low=Green, default=None.\n"
-            + "Context: " + context;
+        // Very explicit prompt with a concrete example so small models follow it
+        String systemPrompt =
+            "You are a productivity assistant. Today is " + today + ". Tomorrow is " + tomorrow + ".\n\n" +
+            "You MUST respond with ONLY a single valid JSON object. No explanation. No markdown. No extra text.\n\n" +
+            "JSON format:\n" +
+            "{\"action\":\"ACTION\",\"params\":{},\"reply\":\"friendly message\"}\n\n" +
+            "ACTION must be exactly one of:\n" +
+            "- none : for questions/greetings, answer in reply field\n" +
+            "- add_task : params: title(required), dueDate(YYYY-MM-DD), priority(Red|Yellow|Green|None), description\n" +
+            "- add_event : params: title(required), date(YYYY-MM-DD), startTime(HH:MM), endTime(HH:MM), location, color, repeat(none|daily|weekly|biweekly|monthly)\n" +
+            "- add_reminder : params: title(required), datetime(YYYY-MM-DDTHH:MM)\n" +
+            "- add_habit : params: name(required), icon, duration(days)\n" +
+            "- delete_task : params: title(required)\n" +
+            "- delete_event : params: title(required)\n" +
+            "- reschedule_task : params: title(required), newDate(YYYY-MM-DD)\n" +
+            "- reschedule_event : params: title(required), newDate(YYYY-MM-DD), newStartTime(HH:MM)\n" +
+            "- complete_task : params: title(required)\n" +
+            "- query_schedule : params: date(YYYY-MM-DD)\n" +
+            "- show_report : params: {}\n\n" +
+            "Rules:\n" +
+            "- 'tomorrow' = " + tomorrow + "\n" +
+            "- 'tonight' = today " + today + "\n" +
+            "- 'lunch' = 12:00, 'noon' = 12:00, 'morning' = 09:00, 'evening' = 18:00\n" +
+            "- high priority = Red, medium = Yellow, low = Green\n" +
+            "- If user gives a time like '3pm' with a task, use add_event not add_task\n" +
+            "- For 'what do I have tomorrow' use action=query_schedule with date=" + tomorrow + "\n" +
+            "- For 'reschedule X to Friday' find the next Friday date and use reschedule_task or reschedule_event\n\n" +
+            "Example: User says 'Add lunch with Sarah on Thursday at noon'\n" +
+            "Response: {\"action\":\"add_event\",\"params\":{\"title\":\"Lunch with Sarah\",\"date\":\"2026-04-02\",\"startTime\":\"12:00\",\"endTime\":\"13:00\"},\"reply\":\"Added lunch with Sarah on Thursday at noon!\"}\n\n" +
+            "User's current data:\n" + context;
 
-        // openrouter/free automatically picks from all currently available free models
-        // This means it never breaks when a specific model gets removed
         String url = "https://openrouter.ai/api/v1/chat/completions";
 
         Map<String, Object> requestBody = Map.of(
@@ -59,7 +79,7 @@ public class GeminiController {
                 Map.of("role", "system", "content", systemPrompt),
                 Map.of("role", "user", "content", userMessage)
             ),
-            "max_tokens", 256,
+            "max_tokens", 300,
             "temperature", 0.1
         );
 
@@ -72,16 +92,59 @@ public class GeminiController {
 
         try {
             ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-            var choices = (List<?>) response.getBody().get("choices");
-            var message = (Map<?, ?>) ((Map<?, ?>) choices.get(0)).get("message");
-            String text = (String) message.get("content");
+            Map<?, ?> responseBody = response.getBody();
 
-            text = text.strip();
+            if (responseBody == null) {
+                return ResponseEntity.status(502).body(Map.of("error", "Empty response from AI service."));
+            }
+
+            // Check for API-level error in response body
+            if (responseBody.containsKey("error")) {
+                Object err = responseBody.get("error");
+                return ResponseEntity.status(502).body(Map.of("error", "AI service error: " + err.toString()));
+            }
+
+            List<?> choices = (List<?>) responseBody.get("choices");
+            if (choices == null || choices.isEmpty()) {
+                return ResponseEntity.status(502).body(Map.of("error", "AI returned no choices."));
+            }
+
+            Map<?, ?> choice = (Map<?, ?>) choices.get(0);
+            Map<?, ?> message = (Map<?, ?>) choice.get("message");
+            if (message == null) {
+                return ResponseEntity.status(502).body(Map.of("error", "AI returned no message."));
+            }
+
+            Object contentObj = message.get("content");
+            if (contentObj == null) {
+                // Some models return finish_reason=content_filter or tool_calls instead
+                return ResponseEntity.status(502).body(Map.of("error", "AI returned empty content. Try rephrasing your message."));
+            }
+
+            String text = contentObj.toString().strip();
+
+            // Strip markdown code fences if present
             if (text.startsWith("```")) {
-                text = text.replaceAll("^```[a-z]*\\n?", "").replaceAll("```$", "").strip();
+                text = text.replaceAll("^```[a-zA-Z]*\\n?", "").replaceAll("```\\s*$", "").strip();
+            }
+
+            // Validate it looks like JSON before returning
+            if (!text.startsWith("{")) {
+                // Try to extract JSON from the response
+                int start = text.indexOf('{');
+                int end = text.lastIndexOf('}');
+                if (start != -1 && end != -1 && end > start) {
+                    text = text.substring(start, end + 1);
+                } else {
+                    // Model returned plain text - wrap it as a 'none' action
+                    return ResponseEntity.ok(Map.of("result",
+                        "{\"action\":\"none\",\"params\":{},\"reply\":\"" +
+                        text.replace("\"", "'") + "\"}"));
+                }
             }
 
             return ResponseEntity.ok(Map.of("result", text));
+
         } catch (Exception e) {
             return ResponseEntity.status(500)
                 .body(Map.of("error", "AI request failed: " + e.getMessage()));
