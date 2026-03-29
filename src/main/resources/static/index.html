@@ -224,6 +224,61 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;heigh
 .color-row{display:flex;gap:8px;margin-bottom:14px;}
 .color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform .2s;}
 .color-dot.selected{border-color:#333;transform:scale(1.2);}
+
+/* ── AI ASSISTANT ── */
+.ai-fab{position:fixed;bottom:32px;left:32px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);border:none;cursor:pointer;color:#fff;font-size:22px;box-shadow:0 4px 20px rgba(102,126,234,.5);display:flex;align-items:center;justify-content:center;z-index:200;transition:transform .2s,box-shadow .2s;}
+.ai-fab:hover{transform:scale(1.1);}
+.ai-fab .ai-pulse{position:absolute;inset:-4px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);opacity:.3;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.3;}50%{transform:scale(1.15);opacity:.1;}}
+.ai-panel{position:fixed;bottom:100px;left:32px;width:380px;height:520px;background:#fff;border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,.2);z-index:199;display:none;flex-direction:column;overflow:hidden;border:1px solid rgba(102,126,234,.15);}
+.ai-panel.open{display:flex;}
+.ai-panel-header{background:linear-gradient(135deg,#667eea,#764ba2);padding:16px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.ai-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.ai-header-info{flex:1;}
+.ai-header-name{color:#fff;font-weight:600;font-size:15px;}
+.ai-header-sub{color:rgba(255,255,255,.7);font-size:12px;}
+.ai-close-btn{background:none;border:none;color:rgba(255,255,255,.8);font-size:20px;cursor:pointer;}
+.ai-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.ai-messages::-webkit-scrollbar{width:4px;}
+.ai-messages::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:2px;}
+.ai-msg{display:flex;gap:8px;align-items:flex-start;animation:msgIn .2s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.ai-msg.user{flex-direction:row-reverse;}
+.ai-msg-bubble{max-width:80%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.5;}
+.ai-msg.bot .ai-msg-bubble{background:var(--cream);color:var(--text);border-bottom-left-radius:4px;}
+.ai-msg.user .ai-msg-bubble{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-bottom-right-radius:4px;}
+.ai-msg-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.ai-msg.bot .ai-msg-icon{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;}
+.ai-msg.user .ai-msg-icon{background:var(--cream2);}
+.ai-typing{display:flex;gap:4px;padding:10px 14px;background:var(--cream);border-radius:16px;border-bottom-left-radius:4px;width:fit-content;}
+.ai-typing span{width:6px;height:6px;border-radius:50%;background:#aaa;animation:typing 1.2s infinite;}
+.ai-typing span:nth-child(2){animation-delay:.2s;}
+.ai-typing span:nth-child(3){animation-delay:.4s;}
+@keyframes typing{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+.ai-suggestions{padding:0 16px 8px;display:flex;gap:6px;overflow-x:auto;flex-shrink:0;}
+.ai-suggestions::-webkit-scrollbar{display:none;}
+.ai-suggestion-chip{white-space:nowrap;background:var(--cream);border:1px solid #e0e0e0;border-radius:20px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text);transition:all .15s;flex-shrink:0;}
+.ai-suggestion-chip:hover{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent;}
+.ai-input-row{padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:8px;flex-shrink:0;align-items:flex-end;}
+.ai-input{flex:1;border:1.5px solid #e0e0e0;border-radius:12px;padding:10px 14px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;resize:none;max-height:80px;transition:border-color .2s;line-height:1.4;}
+.ai-input:focus{border-color:#667eea;}
+.ai-send-btn{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);border:none;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s;}
+.ai-send-btn:hover{transform:scale(1.1);}
+.ai-voice-btn{width:36px;height:36px;border-radius:50%;background:var(--cream2);border:none;color:var(--text);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.ai-voice-btn.listening{background:#ff5252;color:#fff;animation:voicePulse .8s infinite alternate;}
+@keyframes voicePulse{from{transform:scale(1);}to{transform:scale(1.15);}}
+.report-modal{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;display:none;align-items:center;justify-content:center;}
+.report-modal.open{display:flex;}
+.report-box{background:#fff;border-radius:24px;padding:32px;width:480px;max-width:95vw;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.report-box h2{font-family:'Playfair Display',serif;font-size:26px;margin-bottom:6px;}
+.report-sub{color:var(--text-muted);font-size:13px;margin-bottom:24px;}
+.report-stat-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.report-stat{flex:1;min-width:100px;background:var(--cream);border-radius:14px;padding:16px;text-align:center;}
+.report-stat .rs-num{font-size:28px;font-weight:700;color:var(--teal);}
+.report-stat .rs-label{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.report-chart-wrap{margin-bottom:20px;}
+.report-chart-wrap h3{font-size:15px;font-weight:600;margin-bottom:12px;}
+.report-close{width:100%;padding:12px;background:var(--teal);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:8px;}
 </style>
 </head>
 <body>
@@ -482,6 +537,55 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;heigh
     </div>
   </div>
 </div>
+
+
+<!-- AI ASSISTANT FAB -->
+<button class="ai-fab" onclick="toggleAIPanel()" title="AI Assistant">
+  <div class="ai-pulse"></div>
+  ✨
+</button>
+
+<!-- AI PANEL -->
+<div class="ai-panel" id="ai-panel">
+  <div class="ai-panel-header">
+    <div class="ai-avatar">🤖</div>
+    <div class="ai-header-info">
+      <div class="ai-header-name">AI Assistant</div>
+      <div class="ai-header-sub">Powered by Gemini</div>
+    </div>
+    <button class="ai-close-btn" onclick="toggleAIPanel()">✕</button>
+  </div>
+  <div class="ai-messages" id="ai-messages"></div>
+  <div class="ai-suggestions" id="ai-suggestions">
+    <div class="ai-suggestion-chip" onclick="sendAI('What do I have tomorrow?')">What's tomorrow?</div>
+    <div class="ai-suggestion-chip" onclick="sendAI('Show my report')">My report</div>
+    <div class="ai-suggestion-chip" onclick="sendAI('What tasks are overdue?')">Overdue tasks</div>
+    <div class="ai-suggestion-chip" onclick="sendAI('Add a study session tonight at 8pm')">Add event</div>
+  </div>
+  <div class="ai-input-row">
+    <button class="ai-voice-btn" id="ai-voice-btn" onclick="toggleVoice()" title="Voice input">🎙️</button>
+    <textarea class="ai-input" id="ai-input" placeholder="Ask me anything or add tasks, events..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"></textarea>
+    <button class="ai-send-btn" onclick="sendAI()">➤</button>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="report-modal" id="report-modal">
+  <div class="report-box">
+    <h2>📊 Your Report</h2>
+    <div class="report-sub" id="report-date-range"></div>
+    <div class="report-stat-row" id="report-stats"></div>
+    <div class="report-chart-wrap">
+      <h3>Task Completion</h3>
+      <canvas id="report-chart"></canvas>
+    </div>
+    <div id="report-habit-streaks"></div>
+    <button class="report-close" onclick="closeModal('report-modal')">Close</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
 // ═══════ STATE ═══════
@@ -1044,6 +1148,325 @@ function renderHabits(){
     </div>`;
   }).join('');
 }
+
+
+// ═══════ AI ASSISTANT ═══════
+let aiOpen = false;
+let isListening = false;
+let recognition = null;
+let reportChartInstance = null;
+
+const AI_WELCOME = "Hi! I'm your AI assistant. I can add tasks, events, reminders and habits for you, answer questions about your schedule, and show your productivity report. Just tell me what you need!";
+
+function toggleAIPanel() {
+  const panel = document.getElementById('ai-panel');
+  aiOpen = !aiOpen;
+  panel.classList.toggle('open', aiOpen);
+  if (aiOpen && document.getElementById('ai-messages').children.length === 0) {
+    appendAIMsg('bot', AI_WELCOME);
+  }
+}
+
+function appendAIMsg(role, text) {
+  const container = document.getElementById('ai-messages');
+  const msg = document.createElement('div');
+  msg.className = 'ai-msg ' + role;
+  msg.innerHTML = `
+    <div class="ai-msg-icon">${role === 'bot' ? '🤖' : '👤'}</div>
+    <div class="ai-msg-bubble">${esc(text)}</div>
+  `;
+  container.appendChild(msg);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTyping() {
+  const container = document.getElementById('ai-messages');
+  const el = document.createElement('div');
+  el.className = 'ai-msg bot';
+  el.id = 'ai-typing';
+  el.innerHTML = `<div class="ai-msg-icon">🤖</div><div class="ai-typing"><span></span><span></span><span></span></div>`;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+function hideTyping() {
+  const el = document.getElementById('ai-typing');
+  if (el) el.remove();
+}
+
+function buildContext() {
+  const today = todayStr();
+  const tomorrow = toDateStr(new Date(Date.now() + 86400000));
+  return JSON.stringify({
+    today,
+    tomorrow,
+    tasks: tasks.map(t => ({ id: t.id, title: t.title, dueDate: t.dueDate, priority: t.priority, completed: t.completed })),
+    upcomingEvents: calEvents.slice(0, 20).map(e => ({ id: e.id, title: e.title, date: e.date, startTime: e.startTime, endTime: e.endTime, location: e.location })),
+    reminders: reminders.map(r => ({ id: r.id, title: r.title, datetime: r.datetime })),
+    habits: habits.map(h => ({ name: h.name, streak: h.streak, duration: h.duration }))
+  });
+}
+
+async function sendAI(overrideText) {
+  const input = document.getElementById('ai-input');
+  const text = (overrideText || input.value).trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  appendAIMsg('user', text);
+  showTyping();
+
+  try {
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, context: buildContext() })
+    });
+    const data = await res.json();
+    hideTyping();
+
+    if (data.error) {
+      appendAIMsg('bot', '⚠️ ' + data.error);
+      return;
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(data.result);
+    } catch(e) {
+      appendAIMsg('bot', data.result);
+      return;
+    }
+
+    // Execute the action
+    const reply = executeAIAction(parsed);
+    appendAIMsg('bot', parsed.reply || reply);
+
+  } catch(e) {
+    hideTyping();
+    appendAIMsg('bot', '⚠️ Could not reach AI. Check your connection.');
+  }
+}
+
+function executeAIAction(parsed) {
+  const { action, params } = parsed;
+
+  switch(action) {
+    case 'add_task': {
+      if (!params.title) return 'Please provide a task title.';
+      tasks.push({
+        id: nextId++,
+        title: params.title,
+        description: params.description || '',
+        priority: params.priority || 'None',
+        dueDate: params.dueDate || todayStr(),
+        completed: false
+      });
+      saveToServer();
+      renderDashboard();
+      return `Task added: "${params.title}"`;
+    }
+    case 'add_event': {
+      if (!params.title) return 'Please provide an event title.';
+      calEvents.push({
+        id: nextId++,
+        title: params.title,
+        date: params.date || todayStr(),
+        startTime: params.startTime || '09:00',
+        endTime: params.endTime || '10:00',
+        location: params.location || '',
+        repeat: params.repeat || 'none',
+        color: params.color || '#5dbdbd'
+      });
+      saveToServer();
+      if (document.getElementById('view-calendar').classList.contains('active')) renderCal();
+      return `Event added: "${params.title}"`;
+    }
+    case 'add_reminder': {
+      if (!params.title) return 'Please provide a reminder title.';
+      reminders.push({ id: nextId++, title: params.title, datetime: params.datetime || '' });
+      saveToServer();
+      renderReminders();
+      return `Reminder set: "${params.title}"`;
+    }
+    case 'add_habit': {
+      if (!params.name) return 'Please provide a habit name.';
+      habits.push({
+        id: nextId++, name: params.name, icon: params.icon || '⭐',
+        duration: params.duration || 30,
+        week: [false,false,false,false,false,false,false],
+        streak: 0, startDate: todayStr()
+      });
+      saveToServer();
+      renderHabits();
+      return `Habit added: "${params.name}"`;
+    }
+    case 'delete_task': {
+      const match = tasks.find(t => t.title.toLowerCase().includes((params.title||'').toLowerCase()));
+      if (!match) return `Could not find a task matching "${params.title}".`;
+      tasks = tasks.filter(t => t.id !== match.id);
+      saveToServer(); renderDashboard();
+      return `Deleted task: "${match.title}"`;
+    }
+    case 'delete_event': {
+      const match = calEvents.find(e => e.title.toLowerCase().includes((params.title||'').toLowerCase()));
+      if (!match) return `Could not find an event matching "${params.title}".`;
+      calEvents = calEvents.filter(e => e.id !== match.id);
+      saveToServer();
+      if (document.getElementById('view-calendar').classList.contains('active')) renderCal();
+      return `Deleted event: "${match.title}"`;
+    }
+    case 'reschedule_task': {
+      const match = tasks.find(t => t.title.toLowerCase().includes((params.title||'').toLowerCase()));
+      if (!match) return `Could not find a task matching "${params.title}".`;
+      match.dueDate = params.newDate;
+      saveToServer(); renderDashboard();
+      return `Rescheduled "${match.title}" to ${params.newDate}`;
+    }
+    case 'reschedule_event': {
+      const match = calEvents.find(e => e.title.toLowerCase().includes((params.title||'').toLowerCase()));
+      if (!match) return `Could not find an event matching "${params.title}".`;
+      match.date = params.newDate;
+      if (params.newStartTime) match.startTime = params.newStartTime;
+      saveToServer();
+      if (document.getElementById('view-calendar').classList.contains('active')) renderCal();
+      return `Rescheduled "${match.title}" to ${params.newDate}`;
+    }
+    case 'complete_task': {
+      const match = tasks.find(t => t.title.toLowerCase().includes((params.title||'').toLowerCase()));
+      if (!match) return `Could not find a task matching "${params.title}".`;
+      match.completed = true;
+      saveToServer(); renderDashboard();
+      return `✅ Marked "${match.title}" as complete!`;
+    }
+    case 'query_schedule': {
+      const date = params.date || todayStr();
+      const dayTasks = tasks.filter(t => t.dueDate === date);
+      const dayEvents = getEventsForDate(date);
+      const dayRem = reminders.filter(r => r.datetime && r.datetime.startsWith(date));
+      let summary = `📅 Schedule for ${date}:
+`;
+      if (dayTasks.length) summary += `
+Tasks (${dayTasks.length}):
+` + dayTasks.map(t => `• ${t.title}${t.completed ? ' ✓' : ''}`).join('
+');
+      if (dayEvents.length) summary += `
+Events (${dayEvents.length}):
+` + dayEvents.map(e => `• ${e.title}${e.startTime ? ' at ' + fmtTime(e.startTime) : ''}`).join('
+');
+      if (dayRem.length) summary += `
+Reminders (${dayRem.length}):
+` + dayRem.map(r => `• ${r.title}`).join('
+');
+      if (!dayTasks.length && !dayEvents.length && !dayRem.length) summary += '
+Nothing scheduled! 🎉';
+      return summary;
+    }
+    case 'show_report': {
+      setTimeout(showReport, 100);
+      return '📊 Opening your report...';
+    }
+    default:
+      return parsed.reply || 'Done!';
+  }
+}
+
+// ── VOICE ──
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    appendAIMsg('bot', '⚠️ Voice input is not supported in your browser. Try Chrome.');
+    return;
+  }
+  if (isListening) {
+    recognition.stop();
+    return;
+  }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('ai-voice-btn').classList.add('listening');
+    document.getElementById('ai-voice-btn').textContent = '⏹️';
+  };
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    document.getElementById('ai-input').value = transcript;
+    sendAI();
+  };
+  recognition.onend = () => {
+    isListening = false;
+    document.getElementById('ai-voice-btn').classList.remove('listening');
+    document.getElementById('ai-voice-btn').textContent = '🎙️';
+  };
+  recognition.onerror = () => {
+    isListening = false;
+    document.getElementById('ai-voice-btn').classList.remove('listening');
+    document.getElementById('ai-voice-btn').textContent = '🎙️';
+  };
+  recognition.start();
+}
+
+// ── REPORT ──
+function showReport() {
+  const completed = tasks.filter(t => t.completed).length;
+  const pending = tasks.filter(t => !t.completed && !isDatePast(t.dueDate)).length;
+  const overdue = tasks.filter(t => !t.completed && isDatePast(t.dueDate)).length;
+  const totalHabitDays = habits.reduce((s, h) => s + h.streak, 0);
+  const bestStreak = habits.length ? Math.max(...habits.map(h => h.streak)) : 0;
+
+  document.getElementById('report-date-range').textContent = 'Your productivity overview · ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  document.getElementById('report-stats').innerHTML = `
+    <div class="report-stat"><div class="rs-num">${completed}</div><div class="rs-label">Tasks Done</div></div>
+    <div class="report-stat"><div class="rs-num">${pending}</div><div class="rs-label">Pending</div></div>
+    <div class="report-stat"><div class="rs-num" style="color:var(--red)">${overdue}</div><div class="rs-label">Overdue</div></div>
+    <div class="report-stat"><div class="rs-num">${calEvents.length}</div><div class="rs-label">Events</div></div>
+    <div class="report-stat"><div class="rs-num">${reminders.length}</div><div class="rs-label">Reminders</div></div>
+    <div class="report-stat"><div class="rs-num" style="color:#f4c769">${bestStreak}🔥</div><div class="rs-label">Best Streak</div></div>
+  `;
+
+  // Chart
+  const ctx = document.getElementById('report-chart').getContext('2d');
+  if (reportChartInstance) reportChartInstance.destroy();
+  reportChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Completed', 'Pending', 'Overdue'],
+      datasets: [{
+        data: [completed, pending, overdue],
+        backgroundColor: ['#5dbdbd', '#b39ddb', '#e57373'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } },
+      cutout: '65%'
+    }
+  });
+
+  // Habit streaks
+  document.getElementById('report-habit-streaks').innerHTML = habits.length ? `
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">Habit Streaks</h3>
+    ${habits.map(h => `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span>${h.icon}</span>
+        <span style="flex:1;font-size:14px;">${esc(h.name)}</span>
+        <span style="font-weight:600;color:var(--teal);">${h.streak} days 🔥</span>
+      </div>`).join('')}
+  ` : '';
+
+  document.getElementById('report-modal').classList.add('open');
+}
+
+// Auto-resize textarea
+document.getElementById('ai-input')?.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+});
 
 // ═══════ INIT ═══════
 (async function(){
