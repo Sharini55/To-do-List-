@@ -62,7 +62,7 @@ User's current app data (for context when answering questions):
 """ + context;
 
         // Build Gemini API request
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + geminiApiKey;
+       String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=" + geminiApiKey;
 
         Map<String, Object> requestBody = Map.of(
             "contents", new Object[]{
