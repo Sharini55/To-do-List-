@@ -1344,22 +1344,11 @@ function executeAIAction(parsed) {
       const dayTasks = tasks.filter(t => t.dueDate === date);
       const dayEvents = getEventsForDate(date);
       const dayRem = reminders.filter(r => r.datetime && r.datetime.startsWith(date));
-      let summary = `📅 Schedule for ${date}:
-`;
-      if (dayTasks.length) summary += `
-Tasks (${dayTasks.length}):
-` + dayTasks.map(t => `• ${t.title}${t.completed ? ' ✓' : ''}`).join('
-');
-      if (dayEvents.length) summary += `
-Events (${dayEvents.length}):
-` + dayEvents.map(e => `• ${e.title}${e.startTime ? ' at ' + fmtTime(e.startTime) : ''}`).join('
-');
-      if (dayRem.length) summary += `
-Reminders (${dayRem.length}):
-` + dayRem.map(r => `• ${r.title}`).join('
-');
-      if (!dayTasks.length && !dayEvents.length && !dayRem.length) summary += '
-Nothing scheduled! 🎉';
+      let summary = '📅 Schedule for ' + date + ':\n';
+      if (dayTasks.length) summary += '\nTasks (' + dayTasks.length + '):\n' + dayTasks.map(t => '• ' + t.title + (t.completed ? ' ✓' : '')).join('\n');
+      if (dayEvents.length) summary += '\nEvents (' + dayEvents.length + '):\n' + dayEvents.map(e => '• ' + e.title + (e.startTime ? ' at ' + fmtTime(e.startTime) : '')).join('\n');
+      if (dayRem.length) summary += '\nReminders (' + dayRem.length + '):\n' + dayRem.map(r => '• ' + r.title).join('\n');
+      if (!dayTasks.length && !dayEvents.length && !dayRem.length) summary += 'Nothing scheduled! 🎉';
       return summary;
     }
     case 'show_report': {
