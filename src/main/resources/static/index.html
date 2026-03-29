@@ -1196,14 +1196,16 @@ function hideTyping() {
 function buildContext() {
   const today = todayStr();
   const tomorrow = toDateStr(new Date(Date.now() + 86400000));
-  return JSON.stringify({
-    today,
-    tomorrow,
-    tasks: tasks.map(t => ({ id: t.id, title: t.title, dueDate: t.dueDate, priority: t.priority, completed: t.completed })),
-    upcomingEvents: calEvents.slice(0, 20).map(e => ({ id: e.id, title: e.title, date: e.date, startTime: e.startTime, endTime: e.endTime, location: e.location })),
-    reminders: reminders.map(r => ({ id: r.id, title: r.title, datetime: r.datetime })),
-    habits: habits.map(h => ({ name: h.name, streak: h.streak, duration: h.duration }))
-  });
+  const soon = tasks.filter(t => !t.completed).slice(0, 5)
+    .map(t => t.title + (t.dueDate ? ' due:' + t.dueDate : '') + ' [' + (t.priority||'None') + ']');
+  const events = calEvents.slice(0, 5)
+    .map(e => e.title + ' on:' + e.date + (e.startTime ? ' at:' + e.startTime : ''));
+  const rems = reminders.slice(0, 3)
+    .map(r => r.title + (r.datetime ? ' at:' + r.datetime : ''));
+  return 'today=' + today + ' tomorrow=' + tomorrow
+    + (soon.length ? ' | tasks: ' + soon.join(', ') : '')
+    + (events.length ? ' | events: ' + events.join(', ') : '')
+    + (rems.length ? ' | reminders: ' + rems.join(', ') : '');
 }
 
 async function sendAI(overrideText) {
