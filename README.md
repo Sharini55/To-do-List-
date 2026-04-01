@@ -1,43 +1,49 @@
-# To-Do List Application
+# 🚀 AI-Powered To-Do & Productivity Platform
 
-A modern, multi-view Graphical User Interface (GUI) productivity application built in Java Swing.
+![Java](https://img.shields.io/badge/Java-21-orange.svg)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen.svg)
+![Azure](https://img.shields.io/badge/Deployed%20on-Azure-blue.svg)
 
-This application goes beyond a standard to-do list by combining a powerful task manager with a visual daily timeline planner. It allows users to visually manage their workflow, set precise reminders, assign priority levels, and keep their days organized. All tasks are stored locally, so they persist seamlessly between sessions.
 
-✨ Features
-Multi-View Navigation: Use the sleek left sidebar to seamlessly toggle between your high-level Dashboard and your detailed Daily Planner.
+A modern, cloud-native task management and habit-tracking application featuring a sleek mobile-first UI and an integrated AI productivity assistant. 
 
-Interactive Dashboard: A clean, visually appealing interface. Click the circular checkboxes to strike through tasks and mark them as complete. Track your daily momentum with a dynamic progress bar.
+**Live Demo:** [todoapp-a7a8f7f3djb7h8b8.eastus-01.azurewebsites.net](https://todoapp-a7a8f7f3djb7h8b8.eastus-01.azurewebsites.net/)
 
-Visual Daily Planner: A dedicated timeline view (8:00 AM - 9:00 PM) that allows you to visually block out your day, see tasks with specific time reminders, and view your top priorities at a glance.
+## 💡 The Problem & The Solution
+For many people, organizing their day is a daunting task. Setting up planners, migrating tasks, and tracking habits can be more intimidating and time-consuming than the actual work itself. This friction drives people away from staying organized.
 
-Priority System: Assign color-coded priority levels (Red, Yellow, Green) to tasks to ensure you tackle your most important work first.
+**The Solution:** An app that does the organizing for you. By integrating an AI agent, users can bypass manual data entry entirely. Simply tell the AI, *"I have a math assignment due tomorrow and a dentist appointment on Friday,"* or ask, *"What do I have overdue?"* and the application handles the creation, scheduling, and progress reporting automatically.
 
-Click-to-Edit Menus: Easily interact with any task to update its title, change its due date, update its reminder time, or delete it entirely.
+## ✨ Key Features
 
-Smart Sorting: Tasks are automatically sorted chronologically by their due dates every time the application refreshes.
+* 🤖 **AI Productivity Assistant:** A conversational interface. Use natural language to seamlessly add tasks, schedule calendar events, and request daily overviews. 
+* 📱 **Sleek Mobile-First UI:** A highly responsive, intuitive interface featuring dedicated pages for Task Management, Habit Tracking, and Calendar Views.
+* 📊 **Progress Reports & Analytics:** The AI agent analyzes your workflow to generate personalized productivity states and progress reports, helping you maintain momentum.
+* 🚨 **Smart Overdue & Priority Tracking:** Automatically tracks overdue tasks, sets reminders, and categorizes priorities (Red, Yellow, Green) so you always know what to tackle first.
+* ☁️ **Cloud Persistence:** Fully deployed on Azure App Service with robust backend architecture, ensuring your data is persistently saved and accessible from anywhere.
 
-Clean Workspace: Use the top menu to toggle between viewing all tasks or hiding completed tasks to declutter your list.
+## 🛠️ Technical Architecture
 
-Persistent Storage: Automatically saves all task data, completion status, priorities, and timeframes to a local tasks.txt file. You never lose your progress.
+This project transitioned from a local Java Swing application to a modern microservices architecture:
 
-🚀 Installation & Setup
-Prerequisites: Ensure you have the Java Development Kit (JDK) installed on your machine.
+* **Backend:** Java 21 & Spring Boot 3.2.0
+* **Testing:** Comprehensive automated testing using JUnit 5 and MockMvc.
+* **CI/CD Pipeline:** Fully automated deployment utilizing GitHub Actions (`main_todoapp.yml`) for continuous integration and delivery.
+* **Hosting:** Microsoft Azure App Service.
 
-Clone the repository:
+## 📂 Core Backend Structure
 
-Bash
-git clone https://github.com/Sharini55/To-do-List-.git
+* `TodoAppApplication.java`: The main Spring Boot application entry point.
+* `TaskController.java`: Handles secure RESTful API routing for all CRUD operations related to tasks and habits.
+* `GeminiController.java`: The AI engine. Takes user prompts, injects system context, and forces the LLM to output structured JSON actions (`add_task`, `add_event`, `get_summary`) to dynamically update the UI.
+* `Task.java`: The core data model representing task states, deadlines, and priorities.
+* `TaskControllerTest.java`: Automated test suites ensuring endpoint reliability, HTTP method validation, and stress testing.
 
-Bash
-java MainGUI
-📂 Architecture Overview
-MainGUI.java: The main entry point. Sets up the modern window frame, the sidebar navigation, and the CardLayout that switches between views.
+## 🚀 Local Installation & Setup
 
-DashboardPanel.java: The primary view containing the general task list, visual calendar, and progress bar.
+**Prerequisites:** Ensure you have Java 21 and Maven installed on your machine.
 
-DailyPlannerPanel.java: The secondary view featuring the hourly timeline, priority lists, and goal tracking.
-
-Task.java: The core data model representing a single task (stores title, dates, completion status, and priority).
-
-ToDoApplication.java: The backend file handling the reading and writing of tasks to the local tasks.txt file.
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/Sharini55/To-do-List-.git](https://github.com/Sharini55/To-do-List-.git)
+   cd To-do-List-
