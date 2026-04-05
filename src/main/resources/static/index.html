@@ -378,6 +378,85 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;heigh
   .profile-section{padding:16px 16px 0;}
   .profile-header{padding:28px 20px 20px;}
 }
+
+/* ── PLANNER INLINE ADD ── */
+.planner-card-header-clickable{
+  cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  transition:background .2s;user-select:none;
+}
+.planner-card-header-clickable:hover{background:var(--cream2);}
+.pch-hint{
+  font-size:12px;color:var(--text-muted);font-family:'DM Sans',sans-serif;
+  font-weight:400;opacity:.8;transition:opacity .2s;
+}
+.planner-card-header-clickable:hover .pch-hint{opacity:1;color:var(--teal-dark);}
+.planner-inline-add{
+  background:rgba(255,255,255,.12);border-radius:12px;
+  padding:12px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px;
+  animation:slideDown .2s ease;
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+.planner-inline-input{
+  border:none;border-radius:8px;padding:10px 12px;font-size:14px;
+  font-family:'DM Sans',sans-serif;background:#fff;outline:none;
+  color:var(--text);width:100%;
+}
+.planner-inline-input::placeholder{color:#aaa;}
+.planner-inline-row{display:flex;gap:8px;}
+.planner-inline-select{
+  flex:1;border:none;border-radius:8px;padding:9px 10px;font-size:13px;
+  font-family:'DM Sans',sans-serif;background:#fff;outline:none;color:var(--text);
+}
+.planner-inline-btn{
+  background:#fff;color:var(--teal-dark);border:none;border-radius:8px;
+  padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:background .15s;align-self:flex-end;
+}
+.planner-inline-btn:hover{background:var(--cream);}
+.planner-nlp-preview{
+  display:flex;flex-wrap:wrap;gap:5px;
+}
+.planner-nlp-chip{
+  background:rgba(255,255,255,.3);color:#fff;border-radius:20px;
+  padding:2px 9px;font-size:11px;font-weight:500;
+}
+
+
+/* ── PLANNER TIMELINE DRAG-TO-CREATE ── */
+.planner-right,.planner-timeline-mobile-wrap{position:relative;}
+.timeline-col{position:relative;flex:1;}
+.timeline-drag-preview{
+  position:absolute;left:48px;right:4px;border-radius:8px;
+  background:rgba(255,255,255,0.35);border:2px dashed rgba(255,255,255,.8);
+  pointer-events:none;z-index:10;display:flex;align-items:center;
+  justify-content:center;color:#fff;font-size:12px;font-weight:600;
+  transition:top .05s,height .05s;
+}
+.timeline-slot-clickable{
+  position:relative;cursor:crosshair;
+  border-bottom:1px solid rgba(255,255,255,0.15);
+  display:flex;align-items:flex-start;gap:8px;min-height:48px;
+}
+.timeline-slot-clickable:hover .timeline-hover-hint{opacity:1;}
+.timeline-hover-hint{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  opacity:0;font-size:11px;color:rgba(255,255,255,.5);
+  pointer-events:none;transition:opacity .15s;
+}
+.timeline-event-block-editable{
+  background:#fff;border-radius:8px;padding:6px 10px;
+  margin:3px 4px 3px 0;font-size:12px;color:var(--text);
+  display:flex;align-items:center;justify-content:space-between;
+  border-left:3px solid var(--teal-dark);flex:1;cursor:pointer;
+  transition:background .15s;
+}
+.timeline-event-block-editable:hover{background:#f5f5f5;}
+.timeline-ev-del{
+  background:none;border:none;color:#bbb;cursor:pointer;
+  font-size:16px;padding:0 2px;line-height:1;flex-shrink:0;
+}
+.timeline-ev-del:hover{color:var(--red);}
+
 </style>
 </head>
 <body>
@@ -427,31 +506,89 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;heigh
       <div class="planner-day-label" id="planner-day-label">Today</div>
       <button onclick="shiftPlannerDay(1)">&#9654;</button>
     </div>
+    <div style="padding:8px 16px 0;flex-shrink:0;">
+      <button onclick="aiPlanMyDay()" id="plan-day-btn" style="width:100%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+        ✨ Ask AI to plan your day
+      </button>
+      <div id="plan-day-status" style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:6px;display:none;"></div>
+    </div>
     <div class="planner-inner">
       <!-- LEFT / MAIN: cards (desktop) or full scroll (mobile) -->
       <div class="planner-main">
+        <!-- TASKS CARD -->
         <div class="planner-card">
-          <div class="planner-card-header">Top priority tasks</div>
-          <div id="planner-priority-list"><p style="color:rgba(255,255,255,.6);font-size:14px;">No high-priority tasks.</p></div>
+          <div class="planner-card-header planner-card-header-clickable" onclick="togglePlannerAdd('task')" title="Click to add task">
+            Top priority tasks <span class="pch-hint">tap to add +</span>
+          </div>
+          <div id="planner-add-task" class="planner-inline-add" style="display:none;">
+            <input id="plan-task-title" class="planner-inline-input" placeholder='e.g. "Physics hw" or "Gym tomorrow 6pm"'
+              oninput="plannerNLP(this.value,'task')"/>
+            <div id="plan-task-preview" class="planner-nlp-preview" style="display:none;"></div>
+            <div class="planner-inline-row">
+              <select id="plan-task-priority" class="planner-inline-select">
+                <option value="None">Priority</option>
+                <option value="Red">🔴 High</option>
+                <option value="Yellow">🟡 Medium</option>
+                <option value="Green">🟢 Low</option>
+              </select>
+              <input id="plan-task-date" type="date" class="planner-inline-input" style="flex:1;"/>
+            </div>
+            <button class="planner-inline-btn" onclick="addPlannerTask()">Add Task</button>
+          </div>
+          <div id="planner-priority-list"><p style="color:rgba(255,255,255,.6);font-size:14px;">No tasks for today.</p></div>
         </div>
+        <!-- REMINDERS CARD -->
         <div class="planner-card">
-          <div class="planner-card-header">Reminders</div>
+          <div class="planner-card-header planner-card-header-clickable" onclick="togglePlannerAdd('reminder')" title="Click to add reminder">
+            Reminders <span class="pch-hint">tap to add +</span>
+          </div>
+          <div id="planner-add-reminder" class="planner-inline-add" style="display:none;">
+            <input id="plan-rem-title" class="planner-inline-input" placeholder="Reminder title"/>
+            <input id="plan-rem-datetime" type="datetime-local" class="planner-inline-input"/>
+            <button class="planner-inline-btn" onclick="addPlannerReminder()">Add Reminder</button>
+          </div>
           <div id="planner-reminders-list"><p style="color:rgba(255,255,255,.6);font-size:14px;">No reminders for this day.</p></div>
         </div>
+        <!-- GOALS CARD -->
         <div class="planner-card">
-          <div class="planner-card-header">Goals &amp; Habits</div>
+          <div class="planner-card-header planner-card-header-clickable" onclick="togglePlannerAdd('habit')" title="Click to add habit">
+            Goals &amp; Habits <span class="pch-hint">tap to add +</span>
+          </div>
+          <div id="planner-add-habit" class="planner-inline-add" style="display:none;">
+            <input id="plan-habit-name" class="planner-inline-input" placeholder="Habit name (e.g. Exercise, Read...)"/>
+            <div class="planner-inline-row">
+              <select id="plan-habit-icon" class="planner-inline-select">
+                <option value="💪">💪 Exercise</option>
+                <option value="📚">📚 Read</option>
+                <option value="💧">💧 Drink Water</option>
+                <option value="🧘">🧘 Meditate</option>
+                <option value="✍️">✍️ Journal</option>
+                <option value="🌙">🌙 Sleep Early</option>
+                <option value="⭐">⭐ Custom</option>
+              </select>
+              <select id="plan-habit-duration" class="planner-inline-select">
+                <option value="7">7 days</option>
+                <option value="14">14 days</option>
+                <option value="21">21 days</option>
+                <option value="30" selected>30 days</option>
+                <option value="60">60 days</option>
+                <option value="90">90 days</option>
+              </select>
+            </div>
+            <button class="planner-inline-btn" onclick="addPlannerHabit()">Add Habit</button>
+          </div>
           <div id="planner-goals-list"><p style="color:rgba(255,255,255,.6);font-size:14px;">No habits tracked yet.</p></div>
         </div>
         <!-- Timeline shown only on mobile (hidden on desktop via CSS) -->
         <div class="planner-card planner-timeline-mobile">
-          <div class="planner-card-header">Timeline</div>
+          <div class="planner-card-header">Timeline — drag or tap to add</div>
           <div id="planner-timeline-mobile"></div>
         </div>
       </div>
       <!-- RIGHT: timeline panel — desktop only -->
       <div class="planner-right">
         <h3 style="display:flex;align-items:center;gap:8px;"><span>📅</span> Schedule</h3>
-        <p class="hint">Events from your Calendar appear here</p>
+        <p class="hint">Drag to create · Click to add · Synced with Calendar</p>
         <div id="planner-timeline"></div>
       </div>
     </div>
@@ -606,7 +743,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;heigh
 <!-- FAB -->
 <button class="fab" id="fab-btn" onclick="togglePopup()">+</button>
 <div class="add-popup" id="add-popup">
-  <input id="pop-title" placeholder="Enter the task *"/>
+  <div style="position:relative;">
+    <input id="pop-title" placeholder='Try: "Physics hw tomorrow" or "Gym Friday 6pm"'
+      oninput="nlpParseTitle(this.value)"
+      style="padding-right:36px;"/>
+    <span id="nlp-spinner" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);display:none;font-size:14px;">⏳</span>
+  </div>
+  <div id="nlp-preview" style="display:none;background:rgba(255,255,255,.15);border-radius:10px;padding:8px 12px;font-size:12px;color:#fff;gap:6px;flex-wrap:wrap;"></div>
+  <div id="conflict-warning" style="display:none;background:#ff5252;color:#fff;border-radius:10px;padding:8px 12px;font-size:12px;"></div>
   <div class="popup-row">
     <select id="pop-priority">
       <option value="None">Priority</option>
@@ -617,6 +761,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;heigh
   </div>
   <div class="popup-date-row">
     <span>&#128197;</span><input id="pop-date" type="date"/>
+    <input id="pop-time" type="time" style="border:none;outline:none;font-size:14px;font-family:'DM Sans',sans-serif;width:90px;"/>
   </div>
   <div class="inline-error" id="popup-error">Please choose today or a future date.</div>
   <button class="popup-add-btn" onclick="addTaskFromPopup()">Add Task</button>
@@ -761,10 +906,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;heigh
   </div>
   <div class="ai-messages" id="ai-messages"></div>
   <div class="ai-suggestions" id="ai-suggestions">
-    <div class="ai-suggestion-chip" onclick="sendAI('What do I have tomorrow?')">What's tomorrow?</div>
-    <div class="ai-suggestion-chip" onclick="sendAI('Show my report')">My report</div>
-    <div class="ai-suggestion-chip" onclick="sendAI('What tasks are overdue?')">Overdue tasks</div>
-    <div class="ai-suggestion-chip" onclick="sendAI('Add a study session tonight at 8pm')">Add event</div>
+    <div class="ai-suggestion-chip" onclick="sendAI('What do I have tomorrow?')">What's tomorrow? 📅</div>
+    <div class="ai-suggestion-chip" onclick="sendAI('Show my report')">My report 📊</div>
+    <div class="ai-suggestion-chip" onclick="sendAI('What tasks are overdue?')">Overdue tasks ⚠️</div>
+    <div class="ai-suggestion-chip" onclick="sendAI('Plan my day today')">Plan my day ✨</div>
+    <div class="ai-suggestion-chip" onclick="sendAI('Do I have any conflicts this week?')">Check conflicts 🔍</div>
   </div>
   <div class="ai-input-row">
     <button class="ai-voice-btn" id="ai-voice-btn" onclick="toggleVoice()" title="Voice input">🎙️</button>
@@ -965,7 +1111,255 @@ function renderDayTasks(){
 }
 
 // ═══════ TASKS ═══════
+
+// ═══════════════════════════════════════════
+//  SMART NLP — parses natural language in title field
+// ═══════════════════════════════════════════
+let nlpTimer = null;
+
+// Local fast parse — no API call, instant
+function localNLP(text) {
+  const t = text.toLowerCase();
+  const result = { date: null, time: null, priority: null, isEvent: false };
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // DATE PARSING
+  if (/\btoday\b/.test(t)) result.date = toDateStr(today);
+  else if (/\btomorrow\b/.test(t)) { const d=new Date(today);d.setDate(d.getDate()+1);result.date=toDateStr(d); }
+  else if (/\bnext\s+(mon|tue|wed|thu|fri|sat|sun)/i.test(t)) {
+    const days={mon:1,tue:2,wed:3,thu:4,fri:5,sat:6,sun:0};
+    const m=t.match(/next\s+(mon|tue|wed|thu|fri|sat|sun)/i);
+    const target=days[m[1].toLowerCase()];
+    const d=new Date(today);let diff=(target-d.getDay()+7)%7||7;
+    d.setDate(d.getDate()+diff);result.date=toDateStr(d);
+  } else if (/\b(mon|tue|wed|thu|fri|sat|sun)(day)?\b/i.test(t)) {
+    const days={mon:1,tue:2,wed:3,thu:4,fri:5,sat:6,sun:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6,sunday:0};
+    const m=t.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\b/i);
+    if(m){const target=days[m[1].toLowerCase()];const d=new Date(today);let diff=(target-d.getDay()+7)%7||7;d.setDate(d.getDate()+diff);result.date=toDateStr(d);}
+  } else if (/\bin (\d+) days?\b/.test(t)) {
+    const m=t.match(/in (\d+) days?/);const d=new Date(today);d.setDate(d.getDate()+parseInt(m[1]));result.date=toDateStr(d);
+  } else {
+    // Try month day like "april 5" or "march 30"
+    const months={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11,january:0,february:1,march:2,april:3,june:5,july:6,august:7,september:8,october:9,november:10,december:11};
+    const mm=t.match(/(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+(\d{1,2})/i);
+    if(mm){const d=new Date(today.getFullYear(),months[mm[1].toLowerCase()],parseInt(mm[2]));if(d<today)d.setFullYear(d.getFullYear()+1);result.date=toDateStr(d);}
+  }
+
+  // TIME PARSING
+  const timeMatch = t.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+  if (timeMatch) {
+    let h=parseInt(timeMatch[1]),m=timeMatch[2]?parseInt(timeMatch[2]):0;
+    if(timeMatch[3].toLowerCase()==='pm'&&h<12)h+=12;
+    if(timeMatch[3].toLowerCase()==='am'&&h===12)h=0;
+    result.time=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+    result.isEvent=true;
+  } else if (/\b(noon|midnight|lunch|morning|evening|night)\b/.test(t)) {
+    const map={noon:'12:00',lunch:'12:00',midnight:'00:00',morning:'09:00',evening:'18:00',night:'20:00'};
+    const m2=t.match(/\b(noon|midnight|lunch|morning|evening|night)\b/);
+    result.time=map[m2[1]];result.isEvent=true;
+  }
+
+  // PRIORITY PARSING
+  if (/\b(urgent|high priority|critical|important|asap)\b/.test(t)) result.priority='Red';
+  else if (/\b(medium|normal priority)\b/.test(t)) result.priority='Yellow';
+  else if (/\b(low priority|whenever|someday)\b/.test(t)) result.priority='Green';
+
+  return result;
+}
+
+function cleanTitle(text) {
+  return text
+    .replace(/\b(today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\b/gi,'')
+    .replace(/\bnext\s+(mon|tue|wed|thu|fri|sat|sun)(day)?\b/gi,'')
+    .replace(/\bin \d+ days?\b/gi,'')
+    .replace(/\d{1,2}(?::\d{2})?\s*(am|pm)/gi,'')
+    .replace(/\b(noon|lunch|midnight|morning|evening|night)\b/gi,'')
+    .replace(/\b(urgent|high priority|critical|important|asap|medium|low priority|whenever|someday)\b/gi,'')
+    .replace(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\b/gi,'')
+    .replace(/  +/g,' ').trim();
+}
+
+function nlpParseTitle(val) {
+  clearTimeout(nlpTimer);
+  const preview = document.getElementById('nlp-preview');
+  const conflict = document.getElementById('conflict-warning');
+  if (!val.trim()) { preview.style.display='none'; conflict.style.display='none'; return; }
+
+  const parsed = localNLP(val);
+  const chips = [];
+
+  if (parsed.date) {
+    // Apply to date field immediately
+    document.getElementById('pop-date').value = parsed.date;
+    chips.push('📅 ' + new Date(parsed.date + 'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}));
+  }
+  if (parsed.time) {
+    document.getElementById('pop-time').value = parsed.time;
+    chips.push('🕐 ' + fmtTime(parsed.time));
+  }
+  if (parsed.priority) {
+    document.getElementById('pop-priority').value = parsed.priority;
+    const pmap={Red:'🔴 High',Yellow:'🟡 Medium',Green:'🟢 Low'};
+    chips.push(pmap[parsed.priority]);
+  }
+
+  if (chips.length) {
+    preview.innerHTML = chips.map(c=>`<span style="background:rgba(255,255,255,.25);border-radius:20px;padding:3px 10px;">${c}</span>`).join('');
+    preview.style.display = 'flex';
+  } else {
+    preview.style.display = 'none';
+  }
+
+  // Conflict check — if time set, check for overlapping events
+  if (parsed.date && parsed.time) {
+    const slotMin = timeToMin(parsed.time);
+    const dayEvs = getEventsForDate(parsed.date);
+    const overlap = dayEvs.find(ev => {
+      if (!ev.startTime) return false;
+      const eStart = timeToMin(ev.startTime);
+      const eEnd = ev.endTime ? timeToMin(ev.endTime) : eStart + 60;
+      return slotMin >= eStart && slotMin < eEnd;
+    });
+    if (overlap) {
+      conflict.innerHTML = '⚠️ You already have <strong>' + esc(overlap.title) + '</strong> at ' + fmtTime(overlap.startTime);
+      conflict.style.display = 'block';
+    } else {
+      conflict.style.display = 'none';
+    }
+  } else {
+    conflict.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════
+//  PLAN MY DAY — AI schedules your day
+// ═══════════════════════════════════════════
+async function aiPlanMyDay() {
+  const btn = document.getElementById('plan-day-btn');
+  const status = document.getElementById('plan-day-status');
+  const dstr = toDateStr(plannerDate);
+
+  const dayTasks = tasks.filter(t => t.dueDate === dstr && !t.completed);
+  const dayEvs = getEventsForDate(dstr);
+
+  if (!dayTasks.length && !dayEvs.length) {
+    status.textContent = 'No tasks or events for this day to plan!';
+    status.style.display = 'block';
+    setTimeout(() => status.style.display = 'none', 3000);
+    return;
+  }
+
+  btn.textContent = '⏳ Planning...';
+  btn.disabled = true;
+  status.style.display = 'none';
+
+  const prompt = 'Plan this day by scheduling the tasks around the existing events. ' +
+    'Return a JSON array of scheduled items: [{time:"HH:MM", title:"...", type:"task|break"}]. ' +
+    'Existing events: ' + JSON.stringify(dayEvs.map(e=>({title:e.title,start:e.startTime,end:e.endTime}))) + '. ' +
+    'Tasks to schedule: ' + JSON.stringify(dayTasks.map(t=>({title:t.title,priority:t.priority}))) + '. ' +
+    'Working hours 9am-9pm. Add short breaks. Keep it realistic. Respond ONLY with the JSON array.';
+
+  try {
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: prompt, context: '' })
+    });
+    const data = await res.json();
+
+    let schedule;
+    try {
+      let raw = data.result || '';
+      if (raw.startsWith('{')) {
+        // It returned a wrapped action — try to find array inside reply
+        const parsed = JSON.parse(raw);
+        raw = parsed.reply || raw;
+      }
+      // Extract JSON array
+      const arrMatch = raw.match(/\[([\s\S]*?)\]/);
+      schedule = arrMatch ? JSON.parse('[' + arrMatch[1] + ']') : null;
+    } catch(e) { schedule = null; }
+
+    if (schedule && schedule.length) {
+      // Clear existing manual planner events for this day and add AI plan
+      // We store plan in plannerEvents keyed by time
+      schedule.forEach(item => {
+        if (item.time && item.title) {
+          // Round to nearest 30-min slot
+          const [h,m] = item.time.split(':').map(Number);
+          const slot = String(h).padStart(2,'0') + ':' + (m < 30 ? '00' : '30');
+          plannerEvents[slot] = (item.type === 'break' ? '☕ ' : '📌 ') + item.title;
+        }
+      });
+      saveToServer();
+      renderTimeline();
+      status.textContent = '✅ Day planned! ' + schedule.length + ' items scheduled.';
+    } else {
+      status.textContent = '⚠️ Could not generate plan. Try again.';
+    }
+  } catch(e) {
+    status.textContent = '⚠️ Planning failed. Check connection.';
+  }
+
+  btn.textContent = '✨ Ask AI to plan your day';
+  btn.disabled = false;
+  status.style.display = 'block';
+  setTimeout(() => status.style.display = 'none', 4000);
+}
+
+// ═══════════════════════════════════════════
+//  SMART addTaskFromPopup — uses NLP parsed values
+// ═══════════════════════════════════════════
+
 function addTaskFromPopup(){
+  const rawTitle = document.getElementById('pop-title').value.trim();
+  if (!rawTitle) { alert('Please enter a task title.'); return; }
+
+  const parsed = localNLP(rawTitle);
+  const cleanedTitle = cleanTitle(rawTitle) || rawTitle;
+  const dv = document.getElementById('pop-date').value;
+  const tv = document.getElementById('pop-time').value;
+  const err = document.getElementById('popup-error'); err.classList.remove('show');
+
+  if (dv && isDatePast(dv)) { err.classList.add('show'); return; }
+
+  const finalDate = dv || parsed.date || toDateStr(selectedDate);
+  const finalPriority = document.getElementById('pop-priority').value !== 'None'
+    ? document.getElementById('pop-priority').value
+    : (parsed.priority || 'None');
+
+  // If a time was detected or entered, create a calendar event instead of just a task
+  const finalTime = tv || parsed.time;
+  if (finalTime && parsed.isEvent) {
+    const endMin = timeToMin(finalTime) + 60;
+    calEvents.push({
+      id: nextId++, title: cleanedTitle,
+      date: finalDate, startTime: finalTime,
+      endTime: minToTime(Math.min(endMin, 23*60+30)),
+      location: '', repeat: 'none', color: '#5dbdbd'
+    });
+    saveToServer();
+    if (document.getElementById('view-calendar').classList.contains('active')) renderCal();
+    appendAIMsg && appendAIMsg('bot', '📅 Added "' + cleanedTitle + '" as a calendar event on ' + finalDate + ' at ' + fmtTime(finalTime));
+  } else {
+    tasks.push({
+      id: nextId++, title: cleanedTitle, description: '',
+      priority: finalPriority, dueDate: finalDate, completed: false
+    });
+    saveToServer();
+    renderDashboard();
+  }
+
+  document.getElementById('pop-title').value = '';
+  document.getElementById('pop-priority').value = 'None';
+  document.getElementById('pop-date').value = '';
+  document.getElementById('pop-time').value = '';
+  document.getElementById('nlp-preview').style.display = 'none';
+  document.getElementById('conflict-warning').style.display = 'none';
+  togglePopup();
+}
+
+function addTaskFromPopup_legacy(){
   const title=document.getElementById('pop-title').value.trim();
   const dv=document.getElementById('pop-date').value;
   const err=document.getElementById('popup-error');err.classList.remove('show');
@@ -1276,6 +1670,123 @@ function deleteCalEvent(){
   closeModal('cal-event-modal');renderCal();renderPlanner();saveToServer();
 }
 
+
+// ═══════════════════════════════════════════
+//  PLANNER INLINE ADD FUNCTIONS
+// ═══════════════════════════════════════════
+function togglePlannerAdd(type) {
+  const ids = { task: 'planner-add-task', reminder: 'planner-add-reminder', habit: 'planner-add-habit' };
+  const el = document.getElementById(ids[type]);
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  // Close all first
+  Object.values(ids).forEach(id => { const e = document.getElementById(id); if(e) e.style.display='none'; });
+  if (!isOpen) {
+    el.style.display = 'flex';
+    // Pre-fill date for task/reminder with plannerDate
+    if (type === 'task') {
+      const d = document.getElementById('plan-task-date');
+      if (d) d.value = toDateStr(plannerDate);
+    }
+    if (type === 'reminder') {
+      const dt = document.getElementById('plan-rem-datetime');
+      if (dt) {
+        const d = new Date(plannerDate);
+        d.setHours(9, 0, 0, 0);
+        dt.value = d.toISOString().slice(0,16);
+        dt.min = new Date().toISOString().slice(0,16);
+      }
+    }
+    // Focus first input
+    const inp = el.querySelector('input');
+    if (inp) setTimeout(() => inp.focus(), 50);
+  }
+}
+
+// NLP in planner task input
+function plannerNLP(val, type) {
+  if (type !== 'task') return;
+  const parsed = localNLP(val);
+  const preview = document.getElementById('plan-task-preview');
+  const chips = [];
+  if (parsed.date) {
+    document.getElementById('plan-task-date').value = parsed.date;
+    chips.push('📅 ' + new Date(parsed.date + 'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}));
+  }
+  if (parsed.priority) {
+    document.getElementById('plan-task-priority').value = parsed.priority;
+    chips.push({Red:'🔴 High',Yellow:'🟡 Med',Green:'🟢 Low'}[parsed.priority]);
+  }
+  if (chips.length) {
+    preview.innerHTML = chips.map(c => `<span class="planner-nlp-chip">${c}</span>`).join('');
+    preview.style.display = 'flex';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+function addPlannerTask() {
+  const rawTitle = document.getElementById('plan-task-title').value.trim();
+  if (!rawTitle) { alert('Please enter a task title.'); return; }
+  const parsed = localNLP(rawTitle);
+  const cleanedTitle = cleanTitle(rawTitle) || rawTitle;
+  const dv = document.getElementById('plan-task-date').value || toDateStr(plannerDate);
+  const priority = document.getElementById('plan-task-priority').value;
+  // If it has a time, make it a calendar event
+  if (parsed.isEvent && parsed.time) {
+    const endMin = timeToMin(parsed.time) + 60;
+    calEvents.push({
+      id: nextId++, title: cleanedTitle, date: dv,
+      startTime: parsed.time, endTime: minToTime(Math.min(endMin, 23*60+30)),
+      location: '', repeat: 'none', color: '#5dbdbd'
+    });
+    saveToServer();
+    renderTimeline();
+  } else {
+    tasks.push({
+      id: nextId++, title: cleanedTitle, description: '',
+      priority: priority || 'None', dueDate: dv, completed: false
+    });
+    saveToServer();
+  }
+  // Reset and close
+  document.getElementById('plan-task-title').value = '';
+  document.getElementById('plan-task-priority').value = 'None';
+  document.getElementById('plan-task-preview').style.display = 'none';
+  document.getElementById('planner-add-task').style.display = 'none';
+  renderPlanner();
+}
+
+function addPlannerReminder() {
+  const title = document.getElementById('plan-rem-title').value.trim();
+  const dt = document.getElementById('plan-rem-datetime').value;
+  if (!title || !dt) { alert('Please fill in title and date/time.'); return; }
+  if (new Date(dt) < new Date()) { alert('Please choose a future date and time.'); return; }
+  reminders.push({ id: nextId++, title, datetime: dt });
+  saveToServer();
+  document.getElementById('plan-rem-title').value = '';
+  document.getElementById('planner-add-reminder').style.display = 'none';
+  renderPlanner();
+  renderReminders();
+}
+
+function addPlannerHabit() {
+  const name = document.getElementById('plan-habit-name').value.trim();
+  if (!name) { alert('Please enter a habit name.'); return; }
+  habits.push({
+    id: nextId++, name,
+    icon: document.getElementById('plan-habit-icon').value,
+    duration: parseInt(document.getElementById('plan-habit-duration').value),
+    week: [false,false,false,false,false,false,false],
+    streak: 0, startDate: todayStr()
+  });
+  saveToServer();
+  document.getElementById('plan-habit-name').value = '';
+  document.getElementById('planner-add-habit').style.display = 'none';
+  renderPlanner();
+  renderHabits();
+}
+
 // ═══════ DAILY PLANNER ═══════
 function shiftPlannerDay(dir){
   plannerDate=new Date(plannerDate);plannerDate.setDate(plannerDate.getDate()+dir);renderPlanner();
@@ -1304,42 +1815,237 @@ function renderPlanner(){
   renderTimeline();
 }
 function renderTimeline(){
-  const times=[];for(let h=9;h<=21;h++)['00','30'].forEach(m=>times.push(`${String(h).padStart(2,'0')}:${m}`));
-  // Render into whichever timeline container is visible
+  const SLOT_H = 48; // px per 30-min slot
+  const times=[];
+  for(let h=9;h<=21;h++)['00','30'].forEach(m=>times.push(String(h).padStart(2,'0')+':'+m));
+
   const isMobile = window.innerWidth <= 768;
-  const c = document.getElementById(isMobile ? 'planner-timeline-mobile' : 'planner-timeline');
-  if(!c) return;
-  c.innerHTML='';
-  const plannerDstr=toDateStr(plannerDate);
-  const calEvsForDay=getEventsForDate(plannerDstr);
-  times.forEach(t=>{
-    const slotMin=timeToMin(t);
-    const calEv=calEvsForDay.find(ev=>{
-      if(!ev.startTime)return false;
-      const evMin=timeToMin(ev.startTime);
-      return evMin>=slotMin&&evMin<slotMin+30;
-    });
-    const slot=document.createElement('div');slot.className='timeline-slot';
-    let content='';
-    if(calEv){
-      const startMin=timeToMin(calEv.startTime);
-      const endMin=calEv.endTime?timeToMin(calEv.endTime):startMin+60;
-      const spanSlots=Math.max(1,Math.ceil((endMin-startMin)/30));
-      content=`<div class="timeline-event-block" style="border-left-color:${calEv.color||'var(--teal)'};background:rgba(255,255,255,0.95);cursor:default;min-height:${spanSlots*44}px;align-items:flex-start;padding:8px 10px;">
-                  <span style="flex:1;">
-                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${calEv.color||'var(--teal)'};margin-right:6px;flex-shrink:0;"></span>
-                    <strong style="font-size:13px;">${esc(calEv.title)}</strong>
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
-                      ${calEv.startTime?fmtTime(calEv.startTime):''}${calEv.endTime?' – '+fmtTime(calEv.endTime):''}
-                      ${calEv.location?'<br>📍'+esc(calEv.location):''}
-                    </div>
-                  </span>
-                </div>`;
-    }else{
-      content=`<div style="min-height:42px;"></div>`;
+  const container = document.getElementById(isMobile ? 'planner-timeline-mobile' : 'planner-timeline');
+  if(!container) return;
+
+  const plannerDstr = toDateStr(plannerDate);
+  const calEvsForDay = getEventsForDate(plannerDstr);
+
+  // Build absolute-positioned event layer over the slot grid
+  container.innerHTML = '';
+  container.style.position = 'relative';
+
+  // ── Slot rows (background grid + time labels) ──
+  const grid = document.createElement('div');
+  grid.style.cssText = 'position:relative;';
+
+  // Track which slots are covered by multi-slot events
+  const coveredUntil = {}; // slotIndex -> true
+
+  times.forEach((t, idx) => {
+    const row = document.createElement('div');
+    row.className = 'timeline-slot-clickable';
+    row.style.height = SLOT_H + 'px';
+    row.dataset.time = t;
+    row.dataset.idx = idx;
+
+    const timeLabel = document.createElement('span');
+    timeLabel.className = 'timeline-time';
+    timeLabel.textContent = fmtTime(t);
+    row.appendChild(timeLabel);
+
+    const hint = document.createElement('span');
+    hint.className = 'timeline-hover-hint';
+    hint.textContent = '+ drag or click';
+    row.appendChild(hint);
+
+    grid.appendChild(row);
+  });
+
+  // ── Absolute event blocks (calendar events) ──
+  calEvsForDay.forEach(ev => {
+    if (!ev.startTime) return;
+    const startMin = timeToMin(ev.startTime);
+    const endMin   = ev.endTime ? timeToMin(ev.endTime) : startMin + 60;
+    // Offset from 9:00 (540 min)
+    const topPx    = Math.max(0, (startMin - 540) / 30 * SLOT_H);
+    const heightPx = Math.max(SLOT_H * 0.7, (endMin - startMin) / 30 * SLOT_H - 2);
+
+    const block = document.createElement('div');
+    block.style.cssText = [
+      'position:absolute',
+      'left:48px',
+      'right:4px',
+      'top:' + topPx + 'px',
+      'height:' + heightPx + 'px',
+      'background:' + (ev.color || 'var(--teal)'),
+      'border-radius:8px',
+      'padding:5px 10px',
+      'font-size:12px',
+      'color:#fff',
+      'cursor:pointer',
+      'z-index:5',
+      'box-shadow:0 2px 6px rgba(0,0,0,.15)',
+      'overflow:hidden',
+      'display:flex',
+      'align-items:flex-start',
+      'justify-content:space-between',
+      'gap:4px'
+    ].join(';');
+
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1;overflow:hidden;';
+    info.innerHTML = '<strong style="font-size:12px;">' + esc(ev.title) + '</strong>' +
+      '<div style="font-size:10px;opacity:.85;margin-top:1px;">' +
+      fmtTime(ev.startTime) + (ev.endTime ? ' – ' + fmtTime(ev.endTime) : '') +
+      (ev.location ? ' · 📍' + esc(ev.location) : '') + '</div>';
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '✕';
+    delBtn.style.cssText = 'background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;padding:0;flex-shrink:0;';
+    delBtn.title = 'Delete event';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (confirm('Delete "' + ev.title + '"?')) {
+        calEvents = calEvents.filter(ce => ce.id !== ev.id);
+        saveToServer();
+        renderTimeline();
+        if (document.getElementById('view-calendar').classList.contains('active')) renderCal();
+      }
+    };
+
+    block.appendChild(info);
+    block.appendChild(delBtn);
+    block.onclick = (e) => {
+      if (e.target === delBtn) return;
+      if (!ev._instance) openCalEventModal(ev.id, plannerDstr, null);
+    };
+
+    grid.appendChild(block);
+  });
+
+  container.appendChild(grid);
+
+  // ── Drag-to-create ──
+  let dragStartY = null;
+  let dragStartSlot = null;
+  let preview = null;
+
+  grid.addEventListener('mousedown', e => {
+    // Only on empty areas (not on event blocks)
+    if (e.target.closest('[style*="position:absolute"]')) return;
+    const rect = grid.getBoundingClientRect();
+    dragStartY = e.clientY - rect.top;
+    dragStartSlot = Math.floor(dragStartY / SLOT_H);
+    dragStartSlot = Math.max(0, Math.min(dragStartSlot, times.length - 1));
+
+    preview = document.createElement('div');
+    preview.className = 'timeline-drag-preview';
+    preview.style.top = (dragStartSlot * SLOT_H) + 'px';
+    preview.style.height = SLOT_H + 'px';
+    preview.textContent = fmtTime(times[dragStartSlot]);
+    grid.appendChild(preview);
+    e.preventDefault();
+  });
+
+  grid.addEventListener('mousemove', e => {
+    if (!preview) return;
+    const rect = grid.getBoundingClientRect();
+    const curY = e.clientY - rect.top;
+    const curSlot = Math.max(0, Math.min(Math.floor(curY / SLOT_H), times.length - 1));
+    const minSlot = Math.min(dragStartSlot, curSlot);
+    const maxSlot = Math.max(dragStartSlot, curSlot);
+    preview.style.top  = (minSlot * SLOT_H) + 'px';
+    preview.style.height = ((maxSlot - minSlot + 1) * SLOT_H) + 'px';
+    preview.textContent = fmtTime(times[minSlot]) + ' – ' + fmtTime(times[Math.min(maxSlot + 1, times.length - 1)]);
+  });
+
+  const finishDrag = (e) => {
+    if (!preview) return;
+    const rect = grid.getBoundingClientRect();
+    const curY = e.clientY - rect.top;
+    const curSlot = Math.max(0, Math.min(Math.floor(curY / SLOT_H), times.length - 1));
+    const minSlot = Math.min(dragStartSlot, curSlot);
+    const maxSlot = Math.max(dragStartSlot, curSlot);
+    grid.removeChild(preview);
+    preview = null;
+
+    const startTime = times[minSlot];
+    const endIdx = Math.min(maxSlot + 1, times.length - 1);
+    const endTime = times[endIdx];
+
+    // If it was just a click (same slot, no drag), show quick-add prompt
+    if (minSlot === maxSlot) {
+      const title = prompt('Add event at ' + fmtTime(startTime) + ':');
+      if (title && title.trim()) {
+        calEvents.push({
+          id: nextId++, title: title.trim(), date: plannerDstr,
+          startTime, endTime: times[Math.min(endIdx, times.length-1)],
+          location: '', repeat: 'none', color: '#5dbdbd'
+        });
+        saveToServer();
+        renderTimeline();
+        if (document.getElementById('view-calendar').classList.contains('active')) renderCal();
+      }
+    } else {
+      // Open full modal pre-filled with dragged range
+      openCalEventModal(null, plannerDstr, startTime, endTime);
     }
-    slot.innerHTML=`<span class="timeline-time">${fmtTime(t)}</span><div class="timeline-area">${content}</div>`;
-    c.appendChild(slot);
+    dragStartY = null; dragStartSlot = null;
+  };
+
+  grid.addEventListener('mouseup', finishDrag);
+  grid.addEventListener('mouseleave', (e) => {
+    if (preview) { grid.removeChild(preview); preview = null; dragStartY = null; dragStartSlot = null; }
+  });
+
+  // Touch support for mobile
+  grid.addEventListener('touchstart', e => {
+    const touch = e.touches[0];
+    const rect = grid.getBoundingClientRect();
+    dragStartY = touch.clientY - rect.top;
+    dragStartSlot = Math.floor(dragStartY / SLOT_H);
+    dragStartSlot = Math.max(0, Math.min(dragStartSlot, times.length - 1));
+    preview = document.createElement('div');
+    preview.className = 'timeline-drag-preview';
+    preview.style.top = (dragStartSlot * SLOT_H) + 'px';
+    preview.style.height = SLOT_H + 'px';
+    preview.textContent = fmtTime(times[dragStartSlot]);
+    grid.appendChild(preview);
+  }, {passive:true});
+
+  grid.addEventListener('touchmove', e => {
+    if (!preview) return;
+    const touch = e.touches[0];
+    const rect = grid.getBoundingClientRect();
+    const curY = touch.clientY - rect.top;
+    const curSlot = Math.max(0, Math.min(Math.floor(curY / SLOT_H), times.length - 1));
+    const minSlot = Math.min(dragStartSlot, curSlot);
+    const maxSlot = Math.max(dragStartSlot, curSlot);
+    preview.style.top = (minSlot * SLOT_H) + 'px';
+    preview.style.height = ((maxSlot - minSlot + 1) * SLOT_H) + 'px';
+    preview.textContent = fmtTime(times[minSlot]) + ' – ' + fmtTime(times[Math.min(maxSlot+1,times.length-1)]);
+    e.preventDefault();
+  }, {passive:false});
+
+  grid.addEventListener('touchend', e => {
+    if (!preview) return;
+    const touch = e.changedTouches[0];
+    const rect = grid.getBoundingClientRect();
+    const curY = touch.clientY - rect.top;
+    const curSlot = Math.max(0, Math.min(Math.floor(curY / SLOT_H), times.length - 1));
+    const minSlot = Math.min(dragStartSlot, curSlot);
+    const maxSlot = Math.max(dragStartSlot, curSlot);
+    grid.removeChild(preview); preview = null;
+
+    const startTime = times[minSlot];
+    const endTime = times[Math.min(maxSlot+1, times.length-1)];
+
+    if (minSlot === maxSlot) {
+      const title = prompt('Add event at ' + fmtTime(startTime) + ':');
+      if (title && title.trim()) {
+        calEvents.push({ id:nextId++, title:title.trim(), date:plannerDstr, startTime, endTime, location:'', repeat:'none', color:'#5dbdbd' });
+        saveToServer(); renderTimeline();
+      }
+    } else {
+      openCalEventModal(null, plannerDstr, startTime, endTime);
+    }
+    dragStartY = null; dragStartSlot = null;
   });
 }
 
