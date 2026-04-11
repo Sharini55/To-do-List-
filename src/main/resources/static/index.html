@@ -2160,36 +2160,93 @@ async function sendAI(overrideText){
   const text=(overrideText||input.value).trim();
   if(!text)return;
   input.value='';input.style.height='auto';
-  appendAIMsg('user',text);showTyping();
+
+  // Open panel if closed
+  if(!aiOpen) toggleAIPanel();
+
+  appendAIMsg('user',text);
+  showTyping();
+
   try{
-    const res=await fetch('/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,context:buildContext()})});
+    const res=await fetch('/api/ai/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:text,context:buildContext()})
+    });
     const data=await res.json();
     hideTyping();
-    if(data.error){appendAIMsg('bot','⚠️ '+data.error);return;}
+
+    if(data.error){
+      appendAIMsg('bot','⚠️ '+data.error);
+      return;
+    }
+
     let parsed;
-    try{parsed=JSON.parse(data.result);}catch(e){appendAIMsg('bot',data.result);return;}
-    const reply=executeAIAction(parsed);
-    appendAIMsg('bot',parsed.reply||reply);
-  }catch(e){hideTyping();appendAIMsg('bot','⚠️ Could not reach AI. Check your connection.');}
+    try{
+      parsed=JSON.parse(data.result);
+    }catch(e){
+      appendAIMsg('bot',data.result);
+      return;
+    }
+
+    // Execute and show reply
+    const execReply=executeAIAction(parsed);
+    const displayReply=parsed.reply||execReply||'Done!';
+    appendAIMsg('bot',displayReply);
+
+    // Also show a visual confirmation toast for actions
+    if(parsed.action && parsed.action!=='none' && parsed.action!=='query_schedule' && parsed.action!=='show_report'){
+      showToast(displayReply,'success');
+    }
+
+  }catch(e){
+    hideTyping();
+    appendAIMsg('bot','⚠️ Could not reach AI. Check your connection.');
+  }
+}
+
+// Toast notification for AI actions
+function showToast(msg, type){
+  let toast=document.getElementById('ai-toast');
+  if(!toast){
+    toast=document.createElement('div');
+    toast.id='ai-toast';
+    toast.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);transition:opacity .3s;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;';
+    document.body.appendChild(toast);
+  }
+  if(type==='success') toast.style.background='linear-gradient(135deg,#667eea,#764ba2)';
+  else toast.style.background='#e57373';
+  toast.textContent=msg;
+  toast.style.opacity='1';
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>toast.style.opacity='0',3000);
 }
 
 function executeAIAction(parsed){
   const{action,params}=parsed;
   switch(action){
     case 'add_task':{
-      if(!params.title)return'Please provide a task title.';
+      if(!params.title)return 'Please provide a task title.';
       tasks.push({id:nextId++,title:params.title,description:params.description||'',priority:params.priority||'None',dueDate:params.dueDate||todayStr(),completed:false});
-      saveToServer();renderDashboard();return`Task added: "${params.title}"`;
+      saveToServer();
+      renderDashboard();
+      if(document.getElementById('view-planner').classList.contains('active'))renderPlanner();
+      return 'Added task: "'+params.title+'" for '+(params.dueDate||todayStr());
     }
     case 'add_event':{
       if(!params.title)return'Please provide an event title.';
       calEvents.push({id:nextId++,title:params.title,date:params.date||todayStr(),startTime:params.startTime||'09:00',endTime:params.endTime||'10:00',location:params.location||'',repeat:params.repeat||'none',color:params.color||'#5dbdbd'});
-      saveToServer();if(document.getElementById('view-calendar').classList.contains('active'))renderCal();return`Event added: "${params.title}"`;
+      saveToServer();
+      if(document.getElementById('view-calendar').classList.contains('active'))renderCal();
+      if(document.getElementById('view-planner').classList.contains('active'))renderTimeline();
+      return 'Added event: "'+params.title+'" on '+(params.date||todayStr())+' at '+(params.startTime||'09:00');
     }
     case 'add_reminder':{
       if(!params.title)return'Please provide a reminder title.';
       reminders.push({id:nextId++,title:params.title,datetime:params.datetime||''});
-      saveToServer();renderReminders();return`Reminder set: "${params.title}"`;
+      saveToServer();renderReminders();
+      if(document.getElementById('view-planner').classList.contains('active'))renderPlanner();
+      return 'Reminder set: "'+params.title+'"';
     }
     case 'add_habit':{
       if(!params.name)return'Please provide a habit name.';
@@ -2241,14 +2298,54 @@ function executeAIAction(parsed){
 
 // ── VOICE ──
 function toggleVoice(){
-  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){appendAIMsg('bot','⚠️ Voice not supported. Try Chrome.');return;}
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
+    showToast('Voice not supported — use Chrome or Safari','error');
+    return;
+  }
   if(isListening){recognition.stop();return;}
+
+  const voiceBtn=document.getElementById('ai-voice-btn');
+  const inputEl=document.getElementById('ai-input');
+
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  recognition=new SR();recognition.lang='en-US';recognition.continuous=false;recognition.interimResults=false;
-  recognition.onstart=()=>{isListening=true;document.getElementById('ai-voice-btn').classList.add('listening');document.getElementById('ai-voice-btn').textContent='⏹️';};
-  recognition.onresult=(e)=>{document.getElementById('ai-input').value=e.results[0][0].transcript;sendAI();};
-  recognition.onend=()=>{isListening=false;document.getElementById('ai-voice-btn').classList.remove('listening');document.getElementById('ai-voice-btn').textContent='🎙️';};
-  recognition.onerror=()=>{isListening=false;document.getElementById('ai-voice-btn').classList.remove('listening');document.getElementById('ai-voice-btn').textContent='🎙️';};
+  recognition=new SR();
+  recognition.lang='en-US';
+  recognition.continuous=false;
+  recognition.interimResults=true; // Show partial results as you speak
+
+  recognition.onstart=()=>{
+    isListening=true;
+    voiceBtn.classList.add('listening');
+    voiceBtn.textContent='⏹️';
+    voiceBtn.title='Tap to stop';
+    inputEl.placeholder='Listening...';
+    if(!aiOpen) toggleAIPanel();
+  };
+
+  recognition.onresult=(e)=>{
+    const interim=Array.from(e.results).map(r=>r[0].transcript).join('');
+    inputEl.value=interim;
+    // If final result, send immediately
+    if(e.results[e.results.length-1].isFinal){
+      sendAI(interim);
+    }
+  };
+
+  recognition.onend=()=>{
+    isListening=false;
+    voiceBtn.classList.remove('listening');
+    voiceBtn.textContent='🎙️';
+    voiceBtn.title='Voice input';
+    inputEl.placeholder='Ask me anything or add tasks, events...';
+  };
+
+  recognition.onerror=(e)=>{
+    isListening=false;
+    voiceBtn.classList.remove('listening');
+    voiceBtn.textContent='🎙️';
+    if(e.error!=='aborted') showToast('Voice error: '+e.error,'error');
+  };
+
   recognition.start();
 }
 
