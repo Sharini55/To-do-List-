@@ -32,29 +32,19 @@ public class GeminiController {
     };
 
     @PostMapping("/chat")
-    public ResponseEntity<?> chat(@RequestBody Map<String, Object> body) {
-        if (apiKey == null || apiKey.isBlank()) {
-            return ResponseEntity.status(503)
-                .body(Map.of("error", "AI not configured. Add GEMINI_API_KEY to Azure settings."));
-        }
+public ResponseEntity<?> chat(@RequestBody Map<String, Object> body) {
+    String userMessage = (String) body.get("message");
+    if (userMessage == null || userMessage.isBlank()) {
+        return ResponseEntity.badRequest().body(Map.of("error", "No message provided."));
+    }
 
-        String userMessage = (String) body.get("message");
-        if (userMessage == null || userMessage.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "No message provided."));
-        }
+    // NEW: Use your custom AIProcessor instead of the external API
+    AIProcessor localBrain = new AIProcessor();
+    String aiResult = localBrain.processTaskWithAI(userMessage);
 
-        String context = (String) body.getOrDefault("context", "");
-        String today = java.time.LocalDate.now().toString();
-        String tomorrow = java.time.LocalDate.now().plusDays(1).toString();
-        String dayOfWeek = java.time.LocalDate.now().getDayOfWeek().toString();
-
-        // Calculate next weekday dates for prompt
-        java.time.LocalDate baseDate = java.time.LocalDate.now();
-        Map<String, String> nextDays = new java.util.LinkedHashMap<>();
-        for (int i = 1; i <= 7; i++) {
-            java.time.LocalDate d = baseDate.plusDays(i);
-            nextDays.put(d.getDayOfWeek().toString().toLowerCase(), d.toString());
-        }
+    // This returns the JSON your bridge.py created: {"intent": "create", "task": "..."}
+    return ResponseEntity.ok(Map.of("result", aiResult));
+}
 
         String prompt =
             "You are a productivity assistant that EXECUTES actions for the user.\n" +
