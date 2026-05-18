@@ -70,8 +70,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;heigh
 .overdue-task-item:last-child{border-bottom:none;}
 .overdue-task-text{flex:1;font-size:14px;}
 .overdue-badge{font-size:11px;background:var(--overdue);color:#fff;border-radius:6px;padding:2px 7px;}
-.overdue-reschedule{background:none;border:1px solid var(--overdue);color:var(--overdue);border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.overdue-reschedule,.overdue-complete{background:none;border:1px solid var(--overdue);color:var(--overdue);border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.overdue-complete{border-color:var(--teal-dark);color:var(--teal-dark);}
 .overdue-reschedule:hover{background:var(--overdue);color:#fff;}
+.overdue-complete:hover{background:var(--teal-dark);color:#fff;}
 .dash-task-item{display:flex;align-items:center;gap:14px;padding:6px 0;border-radius:8px;}
 .dash-task-circle{width:22px;height:22px;border-radius:50%;border:2px solid var(--teal);flex-shrink:0;cursor:pointer;}
 .dash-task-item.done .dash-task-circle{background:var(--teal-dark);border-color:var(--teal-dark);}
@@ -110,12 +112,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;heigh
 /* Mobile-only timeline card hidden on desktop */
 .planner-timeline-mobile{display:none;}
 .priority-bullet{display:flex;align-items:center;gap:12px;margin:10px 0;}
+.priority-check{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.75);background:transparent;cursor:pointer;flex-shrink:0;}
+.priority-check:hover{background:rgba(255,255,255,.25);}
 .priority-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
 .priority-dot.red{background:var(--red);}
 .priority-dot.yellow{background:#f4c769;}
 .priority-dot.green{background:#81c784;}
-.priority-label{font-size:16px;color:#fff;}
+.priority-label{font-size:16px;color:#fff;cursor:pointer;flex:1;}
+.priority-label:hover{text-decoration:underline;}
 .reminder-item{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.2);border-radius:10px;padding:10px 14px;margin:8px 0;color:#fff;font-size:14px;}
+.planner-item-complete{margin-left:auto;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.55);color:#fff;border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.planner-item-complete:hover{background:#fff;color:var(--teal-dark);}
 .goal-bar{border-radius:10px;padding:12px 18px;margin:8px 0;font-size:15px;color:#fff;font-weight:500;background:linear-gradient(to right,var(--red-light),var(--red));}
 .goal-bar.purple{background:linear-gradient(to right,var(--purple-light),var(--purple));}
 .goal-progress{height:6px;background:rgba(255,255,255,0.4);border-radius:3px;margin-top:8px;}
@@ -451,6 +458,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;heigh
   transition:background .15s;
 }
 .timeline-event-block-editable:hover{background:#f5f5f5;}
+.timeline-event-block-planner{position:absolute;border-radius:8px;padding:5px 10px;font-size:12px;color:#fff;cursor:pointer;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.15);overflow:hidden;display:flex;align-items:flex-start;justify-content:space-between;gap:4px;}
+.timeline-event-block-planner:hover{filter:brightness(.97);}
 .timeline-ev-del{
   background:none;border:none;color:#bbb;cursor:pointer;
   font-size:16px;padding:0 2px;line-height:1;flex-shrink:0;
@@ -964,6 +973,19 @@ function isDatePast(d){return d&&d<todayStr();}
 function isDatetimePast(dt){return dt&&new Date(dt)<new Date();}
 function timeToMin(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;}
 function minToTime(m){return`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;}
+function toDatetimeLocalValue(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function nextReminderTimeForPlanner(){
+  const d = new Date(plannerDate);
+  const now = new Date();
+  d.setHours(9, 0, 0, 0);
+  if (toDateStr(d) === todayStr() && d <= now) {
+    d.setTime(now.getTime() + 30 * 60000);
+    d.setMinutes(Math.ceil(d.getMinutes() / 30) * 30, 0, 0);
+  }
+  return d;
+}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 // ═══════ SERVER STORAGE ═══════
@@ -1077,6 +1099,7 @@ function renderOverdue(){
     <div class="overdue-task-item">
       <span class="overdue-task-text">${esc(t.title)}</span>
       <span class="overdue-badge">Due ${t.dueDate}</span>
+      <button class="overdue-complete" onclick="completeTask(${t.id})">Complete</button>
       <button class="overdue-reschedule" onclick="openReschedule(${t.id})">Reschedule</button>
     </div>`).join('');
 }
@@ -1369,7 +1392,13 @@ function addTaskFromPopup_legacy(){
   document.getElementById('pop-title').value='';document.getElementById('pop-priority').value='None';document.getElementById('pop-date').value='';
   togglePopup();renderDashboard();saveToServer();
 }
-function toggleTask(id){const t=tasks.find(t=>t.id===id);if(t){t.completed=!t.completed;renderDashboard();saveToServer();}}
+function renderAllTaskViews(){
+  if(document.getElementById('view-dashboard').classList.contains('active'))renderDashboard();
+  if(document.getElementById('view-planner').classList.contains('active'))renderPlanner();
+  if(document.getElementById('view-profile').classList.contains('active'))renderProfile();
+}
+function toggleTask(id){const t=tasks.find(t=>t.id===id);if(t){t.completed=!t.completed;renderAllTaskViews();saveToServer();}}
+function completeTask(id){const t=tasks.find(t=>t.id===id);if(t){t.completed=true;renderAllTaskViews();saveToServer();}}
 function openTaskEdit(id){
   const t=tasks.find(t=>t.id===id);if(!t)return;
   editingTaskId=id;
@@ -1401,7 +1430,7 @@ function saveReschedule(){
   const nd=document.getElementById('reschedule-date').value;
   if(!nd||isDatePast(nd)){document.getElementById('reschedule-err').classList.add('show');return;}
   const t=tasks.find(t=>t.id===reschedulingTaskId);if(t)t.dueDate=nd;
-  closeModal('reschedule-modal');renderDashboard();saveToServer();
+  closeModal('reschedule-modal');renderAllTaskViews();saveToServer();
 }
 
 // ═══════ POPUP ═══════
@@ -1691,10 +1720,8 @@ function togglePlannerAdd(type) {
     if (type === 'reminder') {
       const dt = document.getElementById('plan-rem-datetime');
       if (dt) {
-        const d = new Date(plannerDate);
-        d.setHours(9, 0, 0, 0);
-        dt.value = d.toISOString().slice(0,16);
-        dt.min = new Date().toISOString().slice(0,16);
+        dt.value = toDatetimeLocalValue(nextReminderTimeForPlanner());
+        dt.min = toDatetimeLocalValue(new Date());
       }
     }
     // Focus first input
@@ -1755,6 +1782,8 @@ function addPlannerTask() {
   document.getElementById('plan-task-preview').style.display = 'none';
   document.getElementById('planner-add-task').style.display = 'none';
   renderPlanner();
+  if (document.getElementById('view-dashboard').classList.contains('active')) renderDashboard();
+  if (document.getElementById('view-calendar').classList.contains('active')) renderCal();
 }
 
 function addPlannerReminder() {
@@ -1768,6 +1797,7 @@ function addPlannerReminder() {
   document.getElementById('planner-add-reminder').style.display = 'none';
   renderPlanner();
   renderReminders();
+  if (document.getElementById('view-profile').classList.contains('active')) renderProfile();
 }
 
 function addPlannerHabit() {
@@ -1803,11 +1833,11 @@ function renderPlanner(){
   const highPrio=dayTasks.filter(t=>t.priority==='Red'||t.priority==='Yellow');
   const showTasks=highPrio.length?highPrio:dayTasks;
   document.getElementById('planner-priority-list').innerHTML=showTasks.length
-    ?showTasks.map(t=>`<div class="priority-bullet"><div class="priority-dot ${t.priority==='Red'?'red':t.priority==='Yellow'?'yellow':'green'}"></div><span class="priority-label">${esc(t.title)}</span></div>`).join('')
+    ?showTasks.map(t=>`<div class="priority-bullet"><button class="priority-check" title="Complete task" onclick="completeTask(${t.id})"></button><div class="priority-dot ${t.priority==='Red'?'red':t.priority==='Yellow'?'yellow':'green'}"></div><span class="priority-label" onclick="openTaskEdit(${t.id})">${esc(t.title)}</span></div>`).join('')
     :`<p style="color:rgba(255,255,255,.6);font-size:14px;">No tasks for ${isToday?'today':plannerDate.toLocaleDateString('en-US',{weekday:'long'})}.</p>`;
   const dayRem=reminders.filter(r=>r.datetime&&r.datetime.startsWith(dstr));
   document.getElementById('planner-reminders-list').innerHTML=dayRem.length
-    ?dayRem.map(r=>`<div class="reminder-item"><span>⏰</span><div><div style="font-weight:600;">${esc(r.title)}</div><div style="font-size:12px;opacity:.8;">${formatDT(r.datetime)}</div></div></div>`).join('')
+    ?dayRem.map(r=>`<div class="reminder-item"><span>⏰</span><div><div style="font-weight:600;">${esc(r.title)}</div><div style="font-size:12px;opacity:.8;">${formatDT(r.datetime)}</div></div><button class="planner-item-complete" onclick="completeReminder(${r.id})">Done</button></div>`).join('')
     :'<p style="color:rgba(255,255,255,.6);font-size:14px;">No reminders for this day.</p>';
   document.getElementById('planner-goals-list').innerHTML=habits.length
     ?habits.map((h,i)=>{const done=h.week.filter(Boolean).length;const pct=Math.round(done/7*100);return`<div class="goal-bar ${i%2?'purple':''}">${h.icon} ${esc(h.name)}<div class="goal-progress"><div class="goal-fill" style="width:${pct}%"></div></div></div>`;}).join('')
@@ -1867,25 +1897,14 @@ function renderTimeline(){
     const heightPx = Math.max(SLOT_H * 0.7, (endMin - startMin) / 30 * SLOT_H - 2);
 
     const block = document.createElement('div');
+    block.className = 'timeline-event-block-planner';
     block.style.cssText = [
-      'position:absolute',
       'left:48px',
       'right:4px',
       'top:' + topPx + 'px',
       'height:' + heightPx + 'px',
       'background:' + (ev.color || 'var(--teal)'),
-      'border-radius:8px',
-      'padding:5px 10px',
-      'font-size:12px',
-      'color:#fff',
-      'cursor:pointer',
-      'z-index:5',
-      'box-shadow:0 2px 6px rgba(0,0,0,.15)',
-      'overflow:hidden',
-      'display:flex',
-      'align-items:flex-start',
-      'justify-content:space-between',
-      'gap:4px'
+      'border-left:3px solid rgba(255,255,255,.45)'
     ].join(';');
 
     const info = document.createElement('div');
@@ -1928,7 +1947,7 @@ function renderTimeline(){
 
   grid.addEventListener('mousedown', e => {
     // Only on empty areas (not on event blocks)
-    if (e.target.closest('[style*="position:absolute"]')) return;
+    if (e.target.closest('.timeline-event-block-planner')) return;
     const rect = grid.getBoundingClientRect();
     dragStartY = e.clientY - rect.top;
     dragStartSlot = Math.floor(dragStartY / SLOT_H);
@@ -1969,23 +1988,7 @@ function renderTimeline(){
     const endIdx = Math.min(maxSlot + 1, times.length - 1);
     const endTime = times[endIdx];
 
-    // If it was just a click (same slot, no drag), show quick-add prompt
-    if (minSlot === maxSlot) {
-      const title = prompt('Add event at ' + fmtTime(startTime) + ':');
-      if (title && title.trim()) {
-        calEvents.push({
-          id: nextId++, title: title.trim(), date: plannerDstr,
-          startTime, endTime: times[Math.min(endIdx, times.length-1)],
-          location: '', repeat: 'none', color: '#5dbdbd'
-        });
-        saveToServer();
-        renderTimeline();
-        if (document.getElementById('view-calendar').classList.contains('active')) renderCal();
-      }
-    } else {
-      // Open full modal pre-filled with dragged range
-      openCalEventModal(null, plannerDstr, startTime, endTime);
-    }
+    openCalEventModal(null, plannerDstr, startTime, endTime);
     dragStartY = null; dragStartSlot = null;
   };
 
@@ -2036,15 +2039,7 @@ function renderTimeline(){
     const startTime = times[minSlot];
     const endTime = times[Math.min(maxSlot+1, times.length-1)];
 
-    if (minSlot === maxSlot) {
-      const title = prompt('Add event at ' + fmtTime(startTime) + ':');
-      if (title && title.trim()) {
-        calEvents.push({ id:nextId++, title:title.trim(), date:plannerDstr, startTime, endTime, location:'', repeat:'none', color:'#5dbdbd' });
-        saveToServer(); renderTimeline();
-      }
-    } else {
-      openCalEventModal(null, plannerDstr, startTime, endTime);
-    }
+    openCalEventModal(null, plannerDstr, startTime, endTime);
     dragStartY = null; dragStartSlot = null;
   });
 }
@@ -2060,7 +2055,14 @@ function addReminder(){
   document.getElementById('rem-title').value='';document.getElementById('rem-datetime').value='';
   renderReminders();saveToServer();
 }
-function deleteReminder(id){reminders=reminders.filter(r=>r.id!==id);renderReminders();saveToServer();}
+function deleteReminder(id){reminders=reminders.filter(r=>r.id!==id);renderReminders();renderPlanner();saveToServer();}
+function completeReminder(id){
+  reminders=reminders.filter(r=>r.id!==id);
+  renderReminders();
+  renderPlanner();
+  if(document.getElementById('view-profile').classList.contains('active'))renderProfile();
+  saveToServer();
+}
 function renderReminders(){
   const c=document.getElementById('reminders-list');
   c.innerHTML=reminders.length?reminders.map(r=>`
@@ -2256,7 +2258,9 @@ function executeAIAction(parsed){
     case 'delete_task':{
       const match=tasks.find(t=>t.title.toLowerCase().includes((params.title||'').toLowerCase()));
       if(!match)return`Could not find task "${params.title}".`;
-      tasks=tasks.filter(t=>t.id!==match.id);saveToServer();renderDashboard();return`Deleted: "${match.title}"`;
+      tasks=tasks.filter(t=>t.id!==match.id);saveToServer();renderDashboard();
+      if(document.getElementById('view-planner').classList.contains('active'))renderPlanner();
+      return`Deleted: "${match.title}"`;
     }
     case 'delete_event':{
       const match=calEvents.find(e=>e.title.toLowerCase().includes((params.title||'').toLowerCase()));
@@ -2266,7 +2270,9 @@ function executeAIAction(parsed){
     case 'reschedule_task':{
       const match=tasks.find(t=>t.title.toLowerCase().includes((params.title||'').toLowerCase()));
       if(!match)return`Could not find task "${params.title}".`;
-      match.dueDate=params.newDate;saveToServer();renderDashboard();return`Rescheduled "${match.title}" to ${params.newDate}`;
+      match.dueDate=params.newDate;saveToServer();renderDashboard();
+      if(document.getElementById('view-planner').classList.contains('active'))renderPlanner();
+      return`Rescheduled "${match.title}" to ${params.newDate}`;
     }
     case 'reschedule_event':{
       const match=calEvents.find(e=>e.title.toLowerCase().includes((params.title||'').toLowerCase()));
@@ -2277,7 +2283,9 @@ function executeAIAction(parsed){
     case 'complete_task':{
       const match=tasks.find(t=>t.title.toLowerCase().includes((params.title||'').toLowerCase()));
       if(!match)return`Could not find task "${params.title}".`;
-      match.completed=true;saveToServer();renderDashboard();return`✅ Marked "${match.title}" as complete!`;
+      match.completed=true;saveToServer();renderDashboard();
+      if(document.getElementById('view-planner').classList.contains('active'))renderPlanner();
+      return`✅ Marked "${match.title}" as complete!`;
     }
     case 'query_schedule':{
       const date=params.date||todayStr();
@@ -2377,7 +2385,7 @@ document.getElementById('ai-input')?.addEventListener('input',function(){this.st
 (async function(){
   selectedDate=new Date();selectedDate.setHours(0,0,0,0);
   plannerDate=new Date(selectedDate);
-  document.getElementById('rem-datetime').min=new Date().toISOString().slice(0,16);
+  document.getElementById('rem-datetime').min=toDatetimeLocalValue(new Date());
   await loadFromServer();
   if(!Object.keys(plannerEvents).length){
     plannerEvents['09:00']='IEE class';
